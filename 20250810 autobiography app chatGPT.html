@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Minimal Autobiography — Single file</title>
+  <style>
+    /* Minimal UI, sophisticated muted palette */
+    :root{
+      --bg:#0f1720; /* rich dark navy */
+      --panel:#0b1220; /* slightly lighter */
+      --muted:#9aa6b2;
+      --accent-1:#f6ad55; /* warm amber */
+      --accent-2:#7dd3fc; /* soft cyan */
+      --accent-3:#c7a4ff; /* lavender */
+      --glass: rgba(255,255,255,0.03);
+      --radius:12px;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
+    html,body{height:100%;margin:0;background:linear-gradient(180deg,var(--bg),#07101a 80%);color:#e6eef6}
+    .app{max-width:980px;margin:28px auto;padding:20px;display:grid;grid-template-columns:1fr 340px;gap:18px}
+    header{grid-column:1/-1;display:flex;align-items:center;gap:12px}
+    h1{font-size:18px;margin:0;color:var(--accent-3)}
+    p.lead{margin:0;color:var(--muted);font-size:13px}
+
+    .editor{background:var(--panel);padding:12px;border-radius:var(--radius);box-shadow:0 6px 18px rgba(2,6,23,0.6)}
+    .meta{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+    input[type=text], input[type=datetime-local]{background:var(--glass);border:1px solid rgba(255,255,255,0.04);color:inherit;padding:8px;border-radius:8px;font-size:13px}
+    textarea{width:100%;min-height:320px;background:transparent;border:1px dashed rgba(255,255,255,0.04);padding:12px;border-radius:8px;color:inherit;font-size:14px;resize:vertical}
+    .controls{display:flex;gap:8px;margin-top:8px}
+    button{background:linear-gradient(180deg,var(--accent-2),#46c6f4);border:none;padding:8px 12px;border-radius:10px;color:#04202a;font-weight:600;cursor:pointer}
+    button.secondary{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted);font-weight:500}
+
+    .side{display:flex;flex-direction:column;gap:12px}
+    .card{background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);padding:12px;border-radius:12px}
+    .overview h3{margin:0 0 8px 0;font-size:13px;color:var(--accent-3)}
+    .years{display:flex;flex-direction:column;gap:6px;max-height:300px;overflow:auto;padding-right:6px}
+    .year-row{display:flex;gap:8px;align-items:center}
+    .bar{height:10px;background:rgba(255,255,255,0.03);border-radius:999px;flex:1;position:relative}
+    .bar > i{position:absolute;left:0;top:0;height:100%;border-radius:999px}
+    .count{width:56px;text-align:right;font-size:12px;color:var(--muted)}
+
+    .list{max-height:240px;overflow:auto;display:flex;flex-direction:column;gap:6px}
+    .entry{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px;border-radius:8px;background:rgba(255,255,255,0.01);cursor:pointer}
+    .entry small{color:var(--muted)}
+    .entry .actions{display:flex;gap:6px}
+    .tiny{font-size:12px;color:var(--muted)}
+
+    footer{grid-column:1/-1;margin-top:6px;color:var(--muted);font-size:12px}
+
+    /* responsive */
+    @media (max-width:880px){.app{grid-template-columns:1fr;}.side{order:2}}
+  </style>
+</head>
+<body>
+  <div class="app" id="app">
+    <header>
+      <h1>Autobiography (minimal)</h1>
+      <p class="lead">Tiny JSON-backed editor. Minimal storage. Words-per-year overview.</p>
+    </header>
+
+    <section class="editor card">
+      <div class="meta">
+        <input id="dt" type="datetime-local" />
+        <input id="title" type="text" placeholder="optional short heading (keeps storage small)" />
+        <div style="flex:1"></div>
+        <button id="saveBtn">Save</button>
+        <button id="newBtn" class="secondary">New</button>
+      </div>
+
+      <textarea id="body" placeholder="Write your memory, thought or life note... (minimal storage: we store only timestamp, optional heading and text)"></textarea>
+
+      <div class="controls">
+        <span class="tiny">Characters: <span id="chars">0</span></span>
+        <span class="tiny">Words: <span id="words">0</span></span>
+        <div style="flex:1"></div>
+        <button id="pushRemote" class="secondary">Push to npoint</button>
+      </div>
+    </section>
+
+    <aside class="side">
+      <div class="card overview">
+        <h3>Year overview — words written</h3>
+        <div class="years" id="years"></div>
+      </div>
+
+      <div class="card">
+        <h3 style="margin:0 0 8px 0;color:var(--accent-2)">Entries</h3>
+        <div class="list" id="entries"></div>
+      </div>
+
+      <div class="card tiny">
+        <div>Storage design: <strong>JSON</strong> with <code>entries:{'{"YYYYMMDDHHMM": [title?, text]}'}</code>. Minimal: only timestamp, optional short heading and text. Use "Push to npoint" to persist.</div>
+      </div>
+    </aside>
+
+    <footer>Tip: timestamps are stored compactly as <code>YYYYMMDDHHMM</code>. This keeps the document tiny and easy to compress.</footer>
+  </div>
+
+  <script>
+    // CONFIG: npoint endpoint & auth (provided)
+    const NP_URL = 'https://api.npoint.io/593988c1cd72dc4ffb7b';
+    const NP_HEADERS = {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer PhKqhyh2LEhtBbRPLABwB7pq"
+    };
+
+    // Minimal data model
+    // { meta: {version:1, updated:TIMESTAMP}, entries: { '202508101230': [title?, text], ... } }
+    let DATA = { meta:{version:1, updated:null}, entries:{} };
+
+    const dtEl = document.getElementById('dt');
+    const bodyEl = document.getElementById('body');
+    const titleEl = document.getElementById('title');
+    const charsEl = document.getElementById('chars');
+    const wordsEl = document.getElementById('words');
+    const yearsEl = document.getElementById('years');
+    const entriesEl = document.getElementById('entries');
+    const saveBtn = document.getElementById('saveBtn');
+    const newBtn = document.getElementById('newBtn');
+    const pushBtn = document.getElementById('pushRemote');
+
+    // helpers
+    function nowAsYYYYMMDDHHMM(d = new Date()){
+      const z = n=>String(n).padStart(2,'0');
+      return d.getFullYear()+z(d.getMonth()+1)+z(d.getDate())+z(d.getHours())+z(d.getMinutes());
+    }
+
+    function toLocalDateTimeInputValue(ts){
+      // ts like YYYYMMDDHHMM ->  YYYY-MM-DDTHH:MM
+      if(!/^[0-9]{12}$/.test(ts)) return '';
+      return ts.slice(0,4)+'-'+ts.slice(4,6)+'-'+ts.slice(6,8)+'T'+ts.slice(8,10)+':'+ts.slice(10,12);
+    }
+
+    function fromDateTimeInputToTS(val){
+      if(!val) return nowAsYYYYMMDDHHMM();
+      // val typical: 2025-08-10T14:30
+      return val.slice(0,4)+val.slice(5,7)+val.slice(8,10)+val.slice(11,13)+val.slice(14,16);
+    }
+
+    function countWords(text){
+      if(!text) return 0;
+      // collapse whitespace and split
+      return text.trim().split(/\s+/).filter(Boolean).length;
+    }
+
+    function renderOverview(){
+      const map = {}; // year->words
+      Object.entries(DATA.entries).forEach(([ts, value])=>{
+        const year = ts.slice(0,4);
+        const text = Array.isArray(value) ? (value[1] || '') : (value || '');
+        map[year] = (map[year]||0) + countWords(text);
+      });
+      const years = Object.keys(map).sort((a,b)=>b-a);
+      yearsEl.innerHTML = '';
+      const max = years.reduce((m,y)=>Math.max(m,map[y]),0) || 1;
+      years.forEach(y=>{
+        const row = document.createElement('div'); row.className='year-row';
+        const label = document.createElement('div'); label.style.width='46px'; label.innerHTML='<strong>'+y+'</strong>';
+        const barWrap = document.createElement('div'); barWrap.className='bar';
+        const inner = document.createElement('i');
+        // choose color by year hash
+        const hue = (parseInt(y,10)*37)%360;
+        inner.style.background = `linear-gradient(90deg, hsl(${hue} 80% 70%), var(--accent-3))`;
+        const pct = Math.round((map[y]/max)*100);
+        inner.style.width = pct+'%';
+        barWrap.appendChild(inner);
+        const count = document.createElement('div'); count.className='count'; count.textContent = map[y]+'w';
+        row.appendChild(label); row.appendChild(barWrap); row.appendChild(count);
+        yearsEl.appendChild(row);
+      });
+      if(years.length===0){ yearsEl.innerHTML='<div class="tiny" style="color:var(--muted)">No entries yet</div>'; }
+    }
+
+    function renderEntries(){
+      // sort desc by ts
+      const items = Object.entries(DATA.entries).sort((a,b)=>b[0].localeCompare(a[0]));
+      entriesEl.innerHTML='';
+      items.forEach(([ts, val])=>{
+        const [ttl, txt] = Array.isArray(val)? val : [null,val];
+        const row = document.createElement('div'); row.className='entry';
+        row.title = (ttl?ttl+' — ':'') + (txt||'');
+        const left = document.createElement('div');
+        left.innerHTML = `<div><strong>${ttl?ttl:'—'}</strong></div><small>${ts.slice(0,4)}-${ts.slice(4,6)}-${ts.slice(6,8)} ${ts.slice(8,10)}:${ts.slice(10,12)}</small>`;
+        const actions = document.createElement('div'); actions.className='actions';
+        const editBtn = document.createElement('button'); editBtn.className='secondary'; editBtn.textContent='Load';
+        editBtn.onclick = (e)=>{ e.stopPropagation(); loadEntry(ts); };
+        const delBtn = document.createElement('button'); delBtn.textContent='Del'; delBtn.onclick = (e)=>{ e.stopPropagation(); if(confirm('Delete entry '+ts+'?')){ delete DATA.entries[ts]; saveLocal(); renderAll(); } };
+        actions.appendChild(editBtn); actions.appendChild(delBtn);
+        row.appendChild(left); row.appendChild(actions);
+        entriesEl.appendChild(row);
+      });
+      if(items.length===0) entriesEl.innerHTML='<div class="tiny" style="color:var(--muted)">No entries saved locally</div>';
+    }
+
+    function renderStatsForCurrent(){
+      const txt = bodyEl.value || '';
+      charsEl.textContent = txt.length;
+      wordsEl.textContent = countWords(txt);
+    }
+
+    function renderAll(){ renderOverview(); renderEntries(); }
+
+    function loadEntry(ts){
+      const val = DATA.entries[ts];
+      const [ttl, txt] = Array.isArray(val)? val : [null,val];
+      dtEl.value = toLocalDateTimeInputValue(ts);
+      titleEl.value = ttl || '';
+      bodyEl.value = txt || '';
+      renderStatsForCurrent();
+    }
+
+    function saveLocalEntry(ts, title, text){
+      // minimal: if title blank store as null to save bytes
+      const storeVal = title? [title, text] : [null, text];
+      DATA.entries[ts] = storeVal;
+      DATA.meta.updated = nowAsYYYYMMDDHHMM();
+      saveLocal();
+      renderAll();
+    }
+
+    function saveLocal(){
+      try{ localStorage.setItem('auto_data_v1', JSON.stringify(DATA)); }catch(e){ console.warn('local save failed',e) }
+    }
+
+    function loadLocal(){
+      try{ const raw = localStorage.getItem('auto_data_v1'); if(raw) DATA = JSON.parse(raw); }catch(e){ console.warn('load local failed',e) }
+    }
+
+    // Remote push — POST the whole body as JSON to npoint (user provided snippet uses POST)
+    async function pushToRemote(){
+      const body = DATA; // minimal
+      try{
+        pushBtn.disabled = true; pushBtn.textContent = 'Pushing...';
+        const res = await fetch(NP_URL, { method:'POST', headers: NP_HEADERS, body: JSON.stringify(body) });
+        if(!res.ok) throw new Error('HTTP '+res.status);
+        alert('Pushed to npoint (note: this overwrites remote doc with our JSON payload)');
+      }catch(err){ alert('Push failed: '+err); }
+      finally{ pushBtn.disabled=false; pushBtn.textContent='Push to npoint'; }
+    }
+
+    // Remote load — GET
+    async function loadFromRemote(){
+      try{
+        const res = await fetch(NP_URL, { headers: NP_HEADERS });
+        if(!res.ok) throw new Error('HTTP '+res.status);
+        const json = await res.json();
+        if(json && json.entries){ DATA = json; saveLocal(); renderAll(); }
+        else alert('Remote doc did not contain expected structure.');
+      }catch(err){ console.warn('fetch remote fail',err); }
+    }
+
+    // UI wiring
+    bodyEl.addEventListener('input', ()=>{ renderStatsForCurrent(); });
+    saveBtn.addEventListener('click', ()=>{
+      const ts = fromDateTimeInputToTS(dtEl.value);
+      const title = titleEl.value.trim() || null;
+      const text = bodyEl.value.trim();
+      if(!text){ if(!confirm('Save empty text for '+ts+'?')) return; }
+      saveLocalEntry(ts, title, text);
+      // after save, set dt to now+1min to encourage new entry
+      const next = new Date(); next.setMinutes(next.getMinutes()+1); dtEl.value = new Date(next - (next.getTimezoneOffset()*60000)).toISOString().slice(0,16);
+    });
+    newBtn.addEventListener('click', ()=>{ titleEl.value=''; bodyEl.value=''; dtEl.value = new Date(new Date() - (new Date().getTimezoneOffset()*60000)).toISOString().slice(0,16); renderStatsForCurrent(); });
+    pushBtn.addEventListener('click', pushToRemote);
+
+    // boot
+    (function init(){
+      // set datetime default to now in user's local time
+      dtEl.value = new Date(new Date() - (new Date().getTimezoneOffset()*60000)).toISOString().slice(0,16);
+      loadLocal();
+      renderAll();
+      // try to fetch remote but don't overwrite local unless user wants to — we just attempt to populate if empty
+      if(Object.keys(DATA.entries).length===0){ loadFromRemote(); }
+    })();
+
+  </script>
+</body>
+</html>

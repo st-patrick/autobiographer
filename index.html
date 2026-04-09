@@ -1,0 +1,2945 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Autobiographer</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #faf9f5;
+    --surface: #fdfcf8;
+    --surface2: #f2efe4;
+    --border: #d8d3c4;
+    --border-strong: #b5ae9c;
+    --text: #1a1918;
+    --dim: #6f6a60;
+    --faint: #9a9587;
+    --accent: #1a1918;
+    --cov: #1a1918;
+    --empty: transparent;
+    --new: #a66900;
+    --highlight: #f5e6a3;
+    --warn: #8a1a1a;
+    --warn-bg: #fdf4f0;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #18161a;
+      --surface: #1f1d20;
+      --surface2: #27252a;
+      --border: #3a3740;
+      --border-strong: #555159;
+      --text: #ece8dc;
+      --dim: #8a8579;
+      --faint: #5a554d;
+      --accent: #ece8dc;
+      --cov: #ece8dc;
+      --empty: transparent;
+      --new: #c9a368;
+      --highlight: #3d3620;
+      --warn: #e8a5a5;
+      --warn-bg: #2a1a1a;
+    }
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Hoefler Text', 'Libre Baskerville', Georgia, 'Times New Roman', Times, serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 16px;
+    line-height: 1.6;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0 1.5rem 4rem;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: "kern" 1, "liga" 1;
+    font-variant-numeric: oldstyle-nums;
+  }
+
+  .wrap { max-width: 640px; width: 100%; }
+
+  /* headers */
+  h1 {
+    font-size: 2.3rem;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+    color: var(--text);
+    margin-bottom: 0.25rem;
+    line-height: 1.15;
+  }
+  .sub {
+    color: var(--dim);
+    font-size: 0.95rem;
+    font-style: italic;
+    line-height: 1.5;
+    margin-bottom: 2.5rem;
+    max-width: 42ch;
+  }
+  h3 {
+    font-size: 0.88rem;
+    font-weight: 400;
+    font-style: italic;
+    color: var(--dim);
+    margin: 2rem 0 0.8rem;
+    letter-spacing: 0.01em;
+  }
+
+  /* screens */
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* loader */
+  .loader {
+    background: transparent;
+    border: 1px dashed var(--border-strong);
+    padding: 3.5rem 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+  .loader:hover, .loader.dragover { border-color: var(--text); }
+  .loader input { display: none; }
+  .loader p {
+    color: var(--dim);
+    font-size: 1rem;
+    font-style: italic;
+  }
+  .loader strong {
+    font-style: normal;
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  /* saved badge */
+  .saved-badge {
+    font-size: 0.7rem;
+    color: var(--dim);
+    font-style: italic;
+    vertical-align: middle;
+    margin-left: 0.6rem;
+    opacity: 0;
+    transition: opacity 0.4s;
+    font-weight: 400;
+  }
+  .saved-badge.show { opacity: 1; }
+
+  /* integrity warning */
+  .integrity {
+    background: var(--warn-bg);
+    border: 1px solid var(--warn);
+    border-left-width: 4px;
+    padding: 1rem 1.2rem;
+    margin-bottom: 1.5rem;
+    color: var(--text);
+  }
+  .integrity .h {
+    font-weight: 500;
+    font-style: italic;
+    color: var(--warn);
+    margin-bottom: 0.4rem;
+  }
+  .integrity .m {
+    font-size: 0.88rem;
+    line-height: 1.55;
+    color: var(--text);
+    margin-bottom: 0.8rem;
+  }
+
+  /* stats row (on overview) */
+  .stats {
+    display: flex;
+    gap: 0;
+    margin: 1.5rem 0;
+    padding: 1.2rem 0;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  .st {
+    flex: 1;
+    min-width: 90px;
+    padding: 0 1rem;
+    border-right: 1px solid var(--border);
+  }
+  .st:last-child { border-right: none; }
+  .st .v {
+    font-size: 1.9rem;
+    font-weight: 400;
+    color: var(--text);
+    font-variant-numeric: oldstyle-nums tabular-nums;
+    line-height: 1.1;
+  }
+  .st .l {
+    font-size: 0.7rem;
+    color: var(--dim);
+    font-style: italic;
+    letter-spacing: 0.02em;
+    margin-top: 0.3rem;
+  }
+
+  /* timeline */
+  .tl-wrap {
+    margin: 1.5rem 0;
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+  }
+  .tl-grid { display: flex; gap: 2px; flex-wrap: wrap; }
+  .tl-c {
+    width: 16px;
+    height: 16px;
+    border: 1px solid var(--border-strong);
+    position: relative;
+    cursor: default;
+  }
+  .tl-c.cov { background: var(--cov); border-color: var(--cov); }
+  .tl-c.emp { background: transparent; }
+  .tl-c.nw { background: var(--new); border-color: var(--new); }
+  .tl-c:hover::after {
+    content: attr(data-tip);
+    position: absolute; bottom: 130%; left: 50%;
+    transform: translateX(-50%);
+    background: var(--text); color: var(--bg);
+    padding: 3px 8px;
+    font-size: 0.7rem; font-style: italic;
+    white-space: nowrap; z-index: 10;
+    pointer-events: none;
+  }
+  .tl-labels { display: flex; gap: 2px; flex-wrap: wrap; margin-top: 5px; }
+  .tl-lbl {
+    width: 16px;
+    text-align: center;
+    font-size: 0.55rem;
+    color: var(--faint);
+    font-style: italic;
+  }
+  .legend {
+    display: flex;
+    gap: 1.3rem;
+    font-size: 0.72rem;
+    color: var(--dim);
+    font-style: italic;
+    margin-bottom: 0.8rem;
+  }
+  .legend i {
+    display: inline-block;
+    width: 10px; height: 10px;
+    border: 1px solid var(--border-strong);
+    vertical-align: middle;
+    margin-right: 5px;
+  }
+
+  /* gap list */
+  .gap-item {
+    padding: 0.7rem 0;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1rem;
+  }
+  .gap-item:last-child { border-bottom: none; }
+  .gap-item .yrs {
+    font-size: 1.05rem;
+    color: var(--text);
+    font-variant-numeric: oldstyle-nums;
+  }
+  .gap-item .meta {
+    font-size: 0.75rem;
+    color: var(--dim);
+    font-style: italic;
+    margin-top: 0.15rem;
+  }
+  .gap-item .dur {
+    font-size: 0.82rem;
+    color: var(--dim);
+    font-style: italic;
+    white-space: nowrap;
+  }
+
+  /* buttons — classical bordered */
+  .btn {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--text);
+    padding: 0.55rem 1.2rem;
+    font-family: inherit;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 0.01em;
+    font-weight: 400;
+  }
+  .btn:hover { background: var(--text); color: var(--bg); }
+  .btn:disabled, .btn[disabled] {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+  .btn:disabled:hover, .btn[disabled]:hover {
+    background: transparent;
+    color: var(--text);
+  }
+  .btn.sec {
+    border-color: var(--border-strong);
+    color: var(--dim);
+  }
+  .btn.sec:hover {
+    border-color: var(--text);
+    color: var(--text);
+    background: transparent;
+  }
+  .btn.sm {
+    padding: 0.35rem 0.8rem;
+    font-size: 0.76rem;
+  }
+  .btn.dashed {
+    background: transparent;
+    border: 1px dashed var(--border-strong);
+    color: var(--dim);
+    width: 100%;
+    padding: 0.7rem;
+    margin-bottom: 0;
+    font-style: italic;
+  }
+  .btn.dashed:hover {
+    border-color: var(--text);
+    color: var(--text);
+    background: transparent;
+  }
+  .btns { display: flex; gap: 0.5rem; margin-top: 1rem; flex-wrap: wrap; }
+
+  /* quick/past/incoming cards */
+  .quick, .past {
+    background: transparent;
+    border: 1px solid var(--border);
+    padding: 1.2rem;
+    margin-bottom: 1rem;
+  }
+  .ql {
+    font-size: 0.68rem;
+    font-style: italic;
+    letter-spacing: 0.08em;
+    color: var(--dim);
+    margin-bottom: 0.7rem;
+    text-transform: lowercase;
+  }
+  .quick textarea, .past textarea, .ans {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 0.96rem;
+    padding: 0.75rem;
+    resize: vertical;
+    min-height: 80px;
+    line-height: 1.6;
+  }
+  .quick textarea:focus, .past textarea:focus, .ans:focus {
+    outline: none;
+    border-color: var(--text);
+  }
+  .quick textarea::placeholder,
+  .past textarea::placeholder,
+  .ans::placeholder {
+    color: var(--faint);
+    font-style: italic;
+  }
+  .hint {
+    font-size: 0.72rem;
+    color: var(--faint);
+    margin-top: 0.4rem;
+    font-style: italic;
+  }
+
+  /* 100vh zones: each section fills the viewport, content centered */
+  .zone {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 3rem 0 2rem;
+  }
+  .zone > * { flex-shrink: 0; }
+  .zone .scroll-hint {
+    text-align: center;
+    color: var(--faint);
+    font-style: italic;
+    font-size: 1rem;
+    margin-top: auto;
+    padding-top: 2rem;
+  }
+  .zone-quick { justify-content: center; }
+  .zone-interview { justify-content: center; }
+  .zone-done { justify-content: center; text-align: center; color: var(--dim); font-style: italic; font-size: 0.95rem; }
+  .zone-done p { margin-bottom: 1.5rem; }
+
+  /* textarea wrapper with embedded save icon */
+  .ta-wrap {
+    position: relative;
+  }
+  .ta-wrap textarea {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 1.05rem;
+    padding: 1.2rem 3.5rem 1.2rem 1.2rem;
+    resize: vertical;
+    min-height: 200px;
+    line-height: 1.6;
+  }
+  .ta-wrap textarea:focus {
+    outline: none;
+    border-color: var(--text);
+  }
+  .ta-wrap textarea::placeholder {
+    color: var(--faint);
+    font-style: italic;
+  }
+  .save-icon {
+    position: absolute;
+    bottom: 0.9rem;
+    right: 0.9rem;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--dim);
+    width: 2.2rem;
+    height: 2.2rem;
+    border-radius: 50%;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    padding: 0;
+  }
+  .save-icon:hover {
+    border-color: var(--text);
+    color: var(--text);
+    background: var(--bg);
+  }
+
+  /* interview-specific */
+  .hi-meta {
+    font-size: 0.75rem;
+    color: var(--dim);
+    font-style: italic;
+    letter-spacing: 0.02em;
+    margin-bottom: 1rem;
+    text-align: center;
+  }
+  .zone-interview .q-card {
+    border: none;
+    padding: 1rem 0 2rem;
+    margin: 0;
+  }
+  .zone-interview .q-card .qt {
+    font-size: 1.3rem;
+    line-height: 1.5;
+    color: var(--text);
+    font-style: italic;
+    text-align: center;
+  }
+  .inline-actions {
+    display: flex;
+    justify-content: center;
+    gap: 0.8rem;
+    margin-top: 1rem;
+    font-size: 0.8rem;
+    color: var(--dim);
+    font-style: italic;
+  }
+  .inline-actions a {
+    color: var(--dim);
+    cursor: pointer;
+    border-bottom: 1px dotted var(--border);
+  }
+  .inline-actions a:hover {
+    color: var(--text);
+    border-color: var(--text);
+  }
+  .inline-actions .sep { color: var(--faint); }
+
+  .zone-interview details.iv-spec {
+    text-align: center;
+    margin-top: 0.8rem;
+  }
+
+  /* floating saved badge (top right of viewport) */
+  .saved-badge-float {
+    position: fixed;
+    top: 1rem;
+    right: 1.2rem;
+    font-size: 0.68rem;
+    color: var(--dim);
+    font-style: italic;
+    opacity: 0;
+    transition: opacity 0.4s;
+    z-index: 50;
+    pointer-events: none;
+  }
+  .saved-badge-float.show { opacity: 1; }
+  .version-tag {
+    position: fixed;
+    top: 0.9rem;
+    left: 1.1rem;
+    font-size: 0.62rem;
+    color: var(--faint);
+    font-style: italic;
+    opacity: 0.55;
+    z-index: 50;
+    font-variant-numeric: oldstyle-nums;
+    pointer-events: none;
+  }
+
+  .home-below {
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+  }
+
+  /* secondary button row */
+  .secondary-btns {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.2rem;
+  }
+
+  /* date row */
+  .date-row {
+    display: flex;
+    gap: 0.4rem;
+    margin-bottom: 0.6rem;
+    flex-wrap: wrap;
+  }
+  .date-row input, .date-row select {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 0.5rem 0.6rem;
+    font-family: inherit;
+    font-size: 0.85rem;
+    flex: 1;
+    min-width: 80px;
+  }
+  .date-row input:focus, .date-row select:focus {
+    outline: none;
+    border-color: var(--text);
+  }
+
+  /* preview */
+  .preview {
+    font-size: 0.75rem;
+    color: var(--dim);
+    margin-top: 0.5rem;
+    font-style: italic;
+    padding: 0.45rem 0.65rem;
+    background: var(--surface2);
+    word-break: break-all;
+  }
+  .preview .fmt {
+    color: var(--text);
+    font-style: normal;
+    font-weight: 500;
+  }
+
+  /* interview */
+  .iv-progress {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    margin-bottom: 1.2rem;
+    font-size: 0.73rem;
+    color: var(--dim);
+    font-style: italic;
+  }
+  .iv-bar {
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+    position: relative;
+  }
+  .iv-bar-fill {
+    height: 100%;
+    background: var(--text);
+    transition: width 0.3s;
+  }
+  .iv-head {
+    padding: 0.8rem 0;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .iv-head .title {
+    font-size: 1.25rem;
+    color: var(--text);
+    font-weight: 400;
+  }
+  .iv-head .info {
+    color: var(--dim);
+    font-size: 0.85rem;
+    font-style: italic;
+    margin-top: 0.3rem;
+  }
+  .q-card {
+    padding: 1.5rem 0;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 1rem;
+  }
+  .q-card .qt {
+    font-size: 1.15rem;
+    line-height: 1.6;
+    color: var(--text);
+    font-style: italic;
+  }
+
+  details.iv-spec { margin-top: 0.8rem; }
+  details.iv-spec summary {
+    cursor: pointer;
+    color: var(--dim);
+    font-size: 0.75rem;
+    font-style: italic;
+    list-style: none;
+    padding: 0.3rem 0;
+  }
+  details.iv-spec summary::-webkit-details-marker { display: none; }
+  details.iv-spec summary::before { content: '+ '; }
+  details.iv-spec[open] summary::before { content: '− '; }
+  details.iv-spec[open] summary { color: var(--text); }
+  details.iv-spec .date-row { margin-top: 0.6rem; }
+
+  /* toolbar */
+  .toolbar {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 2.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+
+  /* viewer */
+  .viewer-nav {
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    padding: 0.7rem 0;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 1.5rem;
+    z-index: 20;
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .viewer-search {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 0.4rem 0.7rem;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 0.85rem;
+    flex: 1;
+    min-width: 150px;
+    font-style: italic;
+  }
+  .viewer-search:focus {
+    outline: none;
+    border-color: var(--text);
+  }
+  .year-jump {
+    display: flex;
+    gap: 0.3rem;
+    flex-wrap: wrap;
+  }
+  .year-jump a {
+    color: var(--dim);
+    text-decoration: none;
+    font-size: 0.72rem;
+    font-style: italic;
+    padding: 0.2rem 0.55rem;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    font-variant-numeric: oldstyle-nums;
+  }
+  .year-jump a:hover {
+    color: var(--text);
+    border-color: var(--text);
+  }
+  .viewer-content {
+    font-family: inherit;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-size: 17px;
+    line-height: 1.75;
+    color: var(--text);
+    padding: 0 0.3rem;
+    font-variant-numeric: oldstyle-nums;
+  }
+  .viewer-content .yr-h {
+    font-family: inherit;
+    font-size: 1.7rem;
+    font-weight: 400;
+    font-variant: small-caps;
+    letter-spacing: 0.05em;
+    color: var(--text);
+    display: block;
+    margin: 2.5rem 0 0.8rem;
+    padding-bottom: 0.35rem;
+    border-bottom: 1px solid var(--border);
+    scroll-margin-top: 5rem;
+  }
+  .viewer-content .mo-h {
+    font-family: inherit;
+    font-size: 1.05rem;
+    font-style: italic;
+    color: var(--dim);
+    margin-top: 1.4rem;
+    display: inline-block;
+  }
+  .viewer-content .pre-h,
+  .viewer-content .sec-h {
+    font-family: inherit;
+    font-size: 1.1rem;
+    font-style: italic;
+    color: var(--dim);
+    display: block;
+    margin: 1.8rem 0 0.7rem;
+    scroll-margin-top: 5rem;
+  }
+  .viewer-content .date,
+  .viewer-content .date-iso {
+    font-family: inherit;
+    font-size: 0.82rem;
+    color: var(--faint);
+    font-style: italic;
+    margin-right: 0.3em;
+  }
+  .viewer-content mark {
+    background: var(--highlight);
+    color: var(--text);
+    padding: 0 2px;
+  }
+
+  /* on this day — quote block style */
+  .otd {
+    background: transparent;
+    border-left: 3px solid var(--border-strong);
+    padding: 0.7rem 1rem 0.7rem 1.3rem;
+    margin-bottom: 1.5rem;
+  }
+  .otd .ql {
+    margin-bottom: 0.5rem;
+  }
+  .otd-entry {
+    padding: 0.55rem 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.9rem;
+    line-height: 1.55;
+  }
+  .otd-entry:last-child { border-bottom: none; padding-bottom: 0.1rem; }
+  .otd-entry:first-child { padding-top: 0.1rem; }
+  .otd-entry .year {
+    font-size: 0.8rem;
+    font-variant: small-caps;
+    letter-spacing: 0.05em;
+    color: var(--text);
+    margin-right: 0.6em;
+  }
+  .otd-entry .ago {
+    font-size: 0.72rem;
+    color: var(--faint);
+    font-style: italic;
+    margin-left: 0.4em;
+  }
+  .otd-refresh {
+    color: var(--dim);
+    cursor: pointer;
+    font-style: italic;
+    margin-left: 0.6em;
+    text-decoration: none;
+    border-bottom: 1px dotted var(--border);
+  }
+  .otd-refresh:hover { color: var(--text); border-color: var(--text); }
+
+  /* stats dashboard */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    border-top: 1px solid var(--border);
+    border-left: 1px solid var(--border);
+    margin: 1.5rem 0;
+  }
+  .stats-card {
+    padding: 1.2rem;
+    border-right: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .stats-card .v {
+    font-size: 2.1rem;
+    font-weight: 400;
+    color: var(--text);
+    font-variant-numeric: oldstyle-nums tabular-nums;
+    line-height: 1.1;
+  }
+  .stats-card .l {
+    font-size: 0.72rem;
+    color: var(--dim);
+    font-style: italic;
+    letter-spacing: 0.02em;
+    margin-top: 0.35rem;
+  }
+  .stats-card .sub {
+    font-size: 0.7rem;
+    color: var(--faint);
+    font-style: italic;
+    margin-top: 0.2rem;
+  }
+  .stats-section {
+    margin-top: 2rem;
+    padding-top: 1.8rem;
+    border-top: 1px solid var(--border);
+  }
+  .stats-section h3 {
+    color: var(--text);
+    font-size: 1.15rem;
+    font-weight: 400;
+    font-variant: small-caps;
+    letter-spacing: 0.05em;
+    font-style: normal;
+    margin: 0 0 1rem 0;
+  }
+  .bar-chart { display: flex; flex-direction: column; gap: 7px; }
+  .bar-row {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    font-size: 0.82rem;
+  }
+  .bar-label {
+    width: 45px;
+    color: var(--dim);
+    text-align: right;
+    flex-shrink: 0;
+    font-style: italic;
+    font-variant-numeric: oldstyle-nums;
+  }
+  .bar-track {
+    flex: 1;
+    height: 2px;
+    background: var(--border);
+    position: relative;
+  }
+  .bar-fill {
+    height: 100%;
+    background: var(--text);
+    transition: width 0.3s;
+  }
+  .bar-count {
+    color: var(--text);
+    min-width: 35px;
+    font-variant-numeric: oldstyle-nums tabular-nums;
+    font-size: 0.82rem;
+  }
+
+  .people-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.7rem 1.1rem;
+  }
+  .person-chip {
+    font-size: 0.92rem;
+    color: var(--text);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .person-chip:hover { border-bottom-color: var(--text); }
+  .person-chip .cnt {
+    color: var(--dim);
+    margin-left: 0.3em;
+    font-size: 0.78rem;
+    font-style: italic;
+    font-variant-numeric: oldstyle-nums;
+  }
+  /* person profile screen */
+  .person-mini-bar { display: flex; flex-direction: column; gap: 5px; margin: 1rem 0 1.5rem; }
+  .person-summary {
+    display: flex; gap: 2rem; flex-wrap: wrap;
+    padding: 1rem 0; margin-bottom: 1.5rem;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .person-summary .item .v {
+    font-size: 1.5rem; color: var(--text);
+    font-variant-numeric: oldstyle-nums tabular-nums;
+  }
+  .person-summary .item .l {
+    font-size: 0.7rem; color: var(--dim);
+    font-style: italic; margin-top: 0.2rem;
+  }
+  .person-entry {
+    padding: 0.8rem 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.92rem; line-height: 1.6;
+  }
+  .person-entry:last-child { border-bottom: none; }
+  .person-entry .when {
+    font-size: 0.72rem;
+    color: var(--dim);
+    font-style: italic;
+    font-variant-numeric: oldstyle-nums;
+    margin-bottom: 0.3rem;
+  }
+  .person-entry .body { color: var(--text); }
+  .person-entry mark.who {
+    background: var(--highlight);
+    color: var(--text);
+    padding: 0 2px;
+  }
+
+  /* incoming interview variants */
+  .iv-head .title.incoming { color: var(--text); }
+  .q-card.incoming { }
+
+  /* photos browser */
+  .photos-years {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    margin: 0.5rem 0;
+  }
+  .photos-year-card {
+    background: var(--bg);
+    padding: 1rem 0.8rem;
+    cursor: pointer;
+    transition: background 0.15s;
+    text-align: center;
+  }
+  .photos-year-card:hover { background: var(--surface2); }
+  .photos-year-card.empty { opacity: 0.35; cursor: default; }
+  .photos-year-card.empty:hover { background: var(--bg); }
+  .photos-year-card .yr {
+    font-size: 1.5rem;
+    font-weight: 400;
+    color: var(--text);
+    font-variant-numeric: oldstyle-nums tabular-nums;
+    line-height: 1;
+  }
+  .photos-year-card .age {
+    font-size: 0.65rem;
+    color: var(--faint);
+    font-style: italic;
+    margin-top: 0.15rem;
+  }
+  .photos-year-card .cnt {
+    font-size: 0.75rem;
+    color: var(--dim);
+    margin-top: 0.4rem;
+    font-variant-numeric: oldstyle-nums;
+  }
+  .photos-year-card .density {
+    margin-top: 0.4rem;
+    height: 3px;
+    background: var(--text);
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .photos-months {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    margin: 0.5rem 0;
+  }
+  .photos-month-card {
+    background: var(--bg);
+    padding: 1.2rem 0.8rem;
+    cursor: pointer;
+    transition: background 0.15s;
+    text-align: center;
+  }
+  .photos-month-card:hover { background: var(--surface2); }
+  .photos-month-card.empty { opacity: 0.3; cursor: default; }
+  .photos-month-card.empty:hover { background: var(--bg); }
+  .photos-month-card .mo {
+    font-size: 1rem;
+    font-style: italic;
+    color: var(--text);
+  }
+  .photos-month-card .cnt {
+    font-size: 0.75rem;
+    color: var(--dim);
+    margin-top: 0.4rem;
+    font-variant-numeric: oldstyle-nums;
+  }
+
+  .photos-cal-wrap { margin: 0.5rem 0; }
+  .photos-cal-dow {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+    margin-bottom: 4px;
+  }
+  .photos-cal-dow span {
+    text-align: center;
+    font-size: 0.65rem;
+    color: var(--dim);
+    font-style: italic;
+    padding: 0.2rem 0;
+  }
+  .photos-cal {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+  }
+  .photos-day-cell {
+    aspect-ratio: 1;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: default;
+    font-variant-numeric: oldstyle-nums;
+    font-size: 0.85rem;
+    color: var(--dim);
+    transition: all 0.15s;
+  }
+  .photos-day-cell.has-entry {
+    cursor: pointer;
+    color: var(--text);
+  }
+  .photos-day-cell.has-entry:hover {
+    background: var(--surface2);
+    border-color: var(--text);
+  }
+  .photos-day-cell.blank { border: none; }
+  .photos-day-cell .num { line-height: 1; }
+  .photos-day-cell .dot {
+    margin-top: 3px;
+    width: 4px; height: 4px;
+    background: var(--text);
+    border-radius: 50%;
+  }
+  .photos-day-cell .dot.dot2 { width: 6px; height: 6px; }
+  .photos-day-cell .dot.dot3 { width: 8px; height: 8px; }
+
+  .photos-reading-entry {
+    padding: 0.9rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .photos-reading-entry:last-child { border-bottom: none; }
+  .photos-reading-entry .when {
+    font-size: 0.72rem;
+    color: var(--dim);
+    font-style: italic;
+    font-variant-numeric: oldstyle-nums;
+    margin-bottom: 0.3rem;
+  }
+  .photos-reading-entry .body {
+    font-size: 1rem;
+    line-height: 1.65;
+    color: var(--text);
+    white-space: pre-wrap;
+  }
+  .photos-empty {
+    color: var(--dim);
+    font-style: italic;
+    text-align: center;
+    padding: 2rem;
+  }
+
+  /* toast */
+  .toast {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--text);
+    color: var(--bg);
+    padding: 0.55rem 1.3rem;
+    font-family: inherit;
+    font-size: 0.82rem;
+    font-style: italic;
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+    z-index: 100;
+  }
+  .toast.show { opacity: 1; }
+
+  /* fade animation */
+  .fade { animation: fadeIn 0.25s ease; }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div id="integrityWarning" class="integrity" style="display:none">
+    <div class="h">Integrity warning</div>
+    <div class="m" id="integrityMsg"></div>
+    <div class="btns">
+      <button class="btn" id="integrityDownload">Download current state immediately</button>
+      <button class="btn sec" id="integrityDismiss">I understand, dismiss</button>
+    </div>
+  </div>
+  <div class="version-tag">v2026-04-08.5</div>
+  <span class="saved-badge-float" id="savedBadge">· saved</span>
+
+  <!-- LOAD -->
+  <div class="screen active" id="s-load">
+    <div class="loader" id="loader">
+      <input type="file" id="fileIn" accept=".txt">
+      <p>drop <strong>autobiography.txt</strong> here or click to load</p>
+    </div>
+  </div>
+
+  <!-- OVERVIEW / HOME -->
+  <div class="screen" id="s-overview">
+
+    <!-- ZONE 1 (0–100vh): quick entry, alone -->
+    <section class="zone zone-quick">
+      <div class="ta-wrap">
+        <textarea id="quickArea" placeholder="right now…"></textarea>
+        <button class="save-icon" id="quickSave" title="save & download (cmd+enter)">↵</button>
+      </div>
+      <div class="scroll-hint">↓</div>
+    </section>
+
+    <!-- ZONE 2 (100–200vh): the interview -->
+    <section class="zone zone-interview" id="homeInterview">
+      <div class="hi-meta" id="hiMeta"></div>
+      <div class="q-card fade" id="hiCard">
+        <div class="qt" id="hiQuestion"></div>
+      </div>
+      <div class="ta-wrap">
+        <textarea id="hiAnswer" placeholder="…"></textarea>
+        <button class="save-icon" id="hiSave" title="save & next (cmd+enter)">↵</button>
+      </div>
+      <details class="iv-spec" id="hiSpec">
+        <summary>more specific</summary>
+        <div class="date-row">
+          <select id="hiMo">
+            <option value="">— month —</option>
+            <option value="1">Jan</option><option value="2">Feb</option><option value="3">Mar</option>
+            <option value="4">Apr</option><option value="5">May</option><option value="6">Jun</option>
+            <option value="7">Jul</option><option value="8">Aug</option><option value="9">Sep</option>
+            <option value="10">Oct</option><option value="11">Nov</option><option value="12">Dec</option>
+          </select>
+          <input type="number" id="hiDy" placeholder="Day" min="1" max="31">
+          <input type="time" id="hiTm">
+        </div>
+      </details>
+      <div class="inline-actions">
+        <a id="hiReroll">different question</a>
+        <span class="sep">·</span>
+        <a id="hiSkip">skip year</a>
+      </div>
+      <div class="scroll-hint">↓</div>
+    </section>
+
+    <section class="zone zone-done" id="homeDone" style="display:none">
+      <p>No entries yet. Write something above to begin.</p>
+      <div class="scroll-hint">↓</div>
+    </section>
+
+    <!-- BELOW THE FOLD: stats, timeline, photos, past/undated, memory of the day, etc. -->
+    <div class="home-below">
+      <div class="otd" id="onThisDay" style="display:none">
+        <div class="ql"><span id="otdLabel">on this day</span> <span id="otdDate"></span> <a id="otdRefresh" class="otd-refresh" style="display:none">↻ another</a></div>
+        <div id="otdEntries"></div>
+      </div>
+
+      <div class="secondary-btns">
+        <button class="btn dashed" id="pastShow">+ past memory</button>
+        <button class="btn dashed" id="incomingShow">+ undated memory</button>
+      </div>
+
+      <div class="past incoming" id="incomingForm" style="display:none">
+        <div class="ql">undated memory</div>
+        <textarea id="incomingTxt" placeholder="A memory without a specific date. Goes to the INCOMING section."></textarea>
+        <div class="hint">Will be appended to the INCOMING section at the top of your file.</div>
+        <div class="btns">
+          <button class="btn" id="incomingSave">Save & Download</button>
+          <button class="btn sec" id="incomingCancel">Cancel</button>
+        </div>
+      </div>
+
+      <div class="past" id="pastForm" style="display:none">
+        <div class="ql">past memory</div>
+        <div class="date-row">
+          <input type="number" id="pastYr" placeholder="Year" min="1900" max="2100">
+          <select id="pastMo">
+            <option value="">— month —</option>
+            <option value="1">Jan</option><option value="2">Feb</option><option value="3">Mar</option>
+            <option value="4">Apr</option><option value="5">May</option><option value="6">Jun</option>
+            <option value="7">Jul</option><option value="8">Aug</option><option value="9">Sep</option>
+            <option value="10">Oct</option><option value="11">Nov</option><option value="12">Dec</option>
+          </select>
+          <input type="number" id="pastDy" placeholder="Day" min="1" max="31">
+          <input type="time" id="pastTm">
+        </div>
+        <textarea id="pastTxt" placeholder="What's the memory?"></textarea>
+        <div class="preview" id="pastPrev">enter a year to see preview</div>
+        <div class="btns">
+          <button class="btn" id="pastSave">Save & Download</button>
+          <button class="btn sec" id="pastCancel">Cancel</button>
+        </div>
+      </div>
+
+      <div class="stats" id="stats"></div>
+      <div class="tl-wrap">
+        <div class="legend">
+          <span><i style="background:var(--cov);border-color:var(--cov)"></i>covered</span>
+          <span><i></i>empty</span>
+          <span><i style="background:var(--new);border-color:var(--new)"></i>added this session</span>
+        </div>
+        <div id="timeline"></div>
+      </div>
+      <h3>Blind spots (longest first)</h3>
+      <div id="gapList"></div>
+      <div class="toolbar">
+        <button class="btn sec" id="incomingIvBtn">Process incoming</button>
+        <button class="btn sec" id="photosBtn">Photos</button>
+        <button class="btn sec" id="browseBtn">Browse</button>
+        <button class="btn sec" id="statsBtn">Stats</button>
+        <button class="btn sec" id="exportBtn">Download .txt</button>
+        <button class="btn sec sm" id="loadDiffBtn">Load different file</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- VIEWER -->
+  <div class="screen" id="s-viewer">
+    <div class="viewer-nav">
+      <button class="btn sec sm" id="viewerBack">← back</button>
+      <input class="viewer-search" id="viewerSearch" type="search" placeholder="search entries...">
+      <div class="year-jump" id="yearJump"></div>
+    </div>
+    <div class="viewer-content" id="viewerContent"></div>
+  </div>
+
+  <!-- STATS -->
+  <div class="screen" id="s-stats">
+    <div class="viewer-nav">
+      <button class="btn sec sm" id="statsBack">← back</button>
+      <div style="color:var(--text);font-size:1rem;font-style:italic">Your life in numbers</div>
+    </div>
+    <div id="statsContent"></div>
+  </div>
+
+  <!-- PERSON PROFILE -->
+  <div class="screen" id="s-person">
+    <div class="viewer-nav">
+      <button class="btn sec sm" id="personBack">← back</button>
+      <div id="personHeader" style="color:var(--text);font-size:1rem;font-style:italic"></div>
+    </div>
+    <div id="personContent"></div>
+  </div>
+
+  <!-- PHOTOS BROWSER -->
+  <div class="screen" id="s-photos">
+    <div class="viewer-nav">
+      <button class="btn sec sm" id="photosBack">← back</button>
+      <div id="photosHeader" style="color:var(--text);font-size:1rem;font-style:italic"></div>
+    </div>
+    <div id="photosContent"></div>
+  </div>
+
+  <!-- INCOMING INTERVIEW -->
+  <div class="screen" id="s-incoming-iv">
+    <div class="iv-progress">
+      <span id="iiLabel">Item 1/30</span>
+      <div class="iv-bar"><div class="iv-bar-fill" id="iiFill" style="width:0%"></div></div>
+      <span id="iiProcessed">0 processed</span>
+    </div>
+    <div class="iv-head">
+      <div class="title incoming">Processing incoming memory</div>
+      <div class="info">Pick when this happened, optionally expand the text</div>
+    </div>
+    <div class="q-card incoming fade" id="iiCard">
+      <div class="ql">undated memory</div>
+      <div class="qt" id="iiText"></div>
+    </div>
+    <div class="date-row">
+      <input type="number" id="iiYr" placeholder="Year" min="1900" max="2100">
+      <select id="iiMo">
+        <option value="">— month —</option>
+        <option value="1">Jan</option><option value="2">Feb</option><option value="3">Mar</option>
+        <option value="4">Apr</option><option value="5">May</option><option value="6">Jun</option>
+        <option value="7">Jul</option><option value="8">Aug</option><option value="9">Sep</option>
+        <option value="10">Oct</option><option value="11">Nov</option><option value="12">Dec</option>
+      </select>
+      <input type="number" id="iiDy" placeholder="Day" min="1" max="31">
+      <input type="time" id="iiTm">
+    </div>
+    <textarea class="ans" id="iiExpanded" placeholder="Expand this memory (optional). If blank, the original text is used."></textarea>
+    <div class="preview" id="iiPrev">Enter a year to see preview</div>
+    <div class="btns">
+      <button class="btn" id="iiSave">Save & Next</button>
+      <button class="btn sec" id="iiSkip">Skip</button>
+      <button class="btn sec" id="iiDone">Done</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── config ──
+const BIRTH = 1991;
+const MM = {
+  january:1,jan:1,february:2,feb:2,februrary:2,march:3,mar:3,april:4,apr:4,
+  may:5,june:6,jun:6,july:7,jul:7,august:8,aug:8,september:9,sep:9,
+  october:10,oct:10,oktober:10,november:11,nov:11,december:12,dec:12
+};
+const FULL_MO = ['','January','February','March','April','May','June',
+  'July','August','September','October','November','December'];
+const pad2 = n => String(n).padStart(2, '0');
+
+// ── toast ──
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2000);
+}
+
+// ── parser ──
+// Parser that accumulates continuation lines into the current entry's text.
+// A new entry starts when a dated line or section header is encountered.
+// Blank lines inside an entry are preserved. 2+ consecutive blank lines end the entry.
+function parse(text) {
+  const lines = text.split('\n'), out = [];
+  let cY = null, cM = null, inM = false;
+  let cur = null;      // current entry being built, with .textLines array
+  let blankCount = 0;
+  const mp = Object.keys(MM).join('|');
+  const mRe = new RegExp(`^(${mp})\\s*['\u2018\u2019\u201A\u201C\u201D]?\\s*(\\d{2,4})?\\s*=+`, 'i');
+
+  function finalize() {
+    if (cur) {
+      // trim leading and trailing blank lines
+      while (cur.textLines.length > 0 && cur.textLines[0].trim() === '') cur.textLines.shift();
+      while (cur.textLines.length > 0 && cur.textLines[cur.textLines.length - 1].trim() === '') cur.textLines.pop();
+      cur.text = cur.textLines.join('\n');
+      delete cur.textLines;
+      out.push(cur);
+      cur = null;
+    }
+  }
+
+  function start(entry) {
+    finalize();
+    cur = entry;
+    cur.textLines = [entry.text || ''];
+    delete cur.text;
+  }
+
+  for (const raw of lines) {
+    const s = raw.trim();
+
+    // Blank-line handling: 1 blank = paragraph break inside entry, 2+ = end of entry
+    if (!s) {
+      blankCount++;
+      if (blankCount >= 2) { finalize(); }
+      else if (cur) { cur.textLines.push(raw); }
+      continue;
+    }
+    blankCount = 0;
+
+    let m;
+
+    // ── Section headers (always finalize) ──
+    m = s.match(/^=+\s*(\d{4})\s*=+$/);
+    if (m) { finalize(); cY = +m[1]; cM = null; inM = false; continue; }
+    m = s.match(/^=+\s*pre\s+\d{4}/i);
+    if (m) { finalize(); cY = null; cM = null; inM = false; continue; }
+    m = s.match(/^=+\s*INCOMING:?\s*=+/i);
+    if (m) { finalize(); continue; }
+    m = s.match(mRe);
+    if (m) {
+      finalize();
+      cM = MM[m[1].toLowerCase()];
+      if (m[2]) { let y = +m[2]; if (y < 100) y += 2000; cY = y; }
+      inM = true;
+      continue;
+    }
+
+    // ── Dated entry detection (each finalizes previous + starts new) ──
+    m = s.match(/^(\d{2})(\d{2})(\d{2})[.: ]\s*(.*)/);
+    if (m && inM && cY && cM && +m[1] >= 1 && +m[1] <= 31 && +m[2] <= 23 && +m[3] <= 59) {
+      start({ year: cY, month: cM, day: +m[1], hour: +m[2], minute: +m[3], text: m[4] });
+      continue;
+    }
+
+    m = s.match(/^(\d{1,2})(?:st|nd|rd|th)[.:,]?\s*(.*)/i);
+    if (m && inM && cY && cM && +m[1] >= 1 && +m[1] <= 31) {
+      start({ year: cY, month: cM, day: +m[1], text: m[2] || '' });
+      continue;
+    }
+
+    m = s.match(/^(\d{4})(\d{2})(\d{2})(\d{4})?\s+(.*)/);
+    if (m && +m[1] >= 1990 && +m[1] <= 2030 && +m[2] >= 1 && +m[2] <= 12) {
+      const d = +m[3];
+      start({ year: +m[1], month: +m[2], day: d >= 1 && d <= 31 ? d : null, text: m[5] });
+      inM = false; continue;
+    }
+
+    m = s.match(/^(\d{4})(\d{2})\s+(?!\d)(.*)/);
+    if (m && +m[1] >= 1990 && +m[1] <= 2030 && +m[2] >= 1 && +m[2] <= 12) {
+      start({ year: +m[1], month: +m[2], day: null, text: m[3] });
+      continue;
+    }
+
+    m = s.match(/^(\d{4})-(\d{2})-(\d{2})\s+(.*)/);
+    if (m) { start({ year: +m[1], month: +m[2], day: +m[3], text: m[4] }); inM = false; continue; }
+
+    m = s.match(/^(\d{4})-(\d{2})\s+(?!ish)(.*)/);
+    if (m && +m[2] >= 1 && +m[2] <= 12) {
+      start({ year: +m[1], month: +m[2], day: null, text: m[3] });
+      continue;
+    }
+
+    m = s.match(/^(\d{4})-\d{2,4}\s*ish\b[:.!]?\s*(.*)/i);
+    if (m) { start({ year: +m[1], month: null, day: null, text: m[2] || s }); continue; }
+
+    m = s.match(/^(\d{4})\s*-?ish\b[:.!]?\s*(.*)/i);
+    if (m) { start({ year: +m[1], month: null, day: null, text: m[2] || s }); continue; }
+
+    m = s.match(/^(\d{4})\s+(spring|summer|fall|autumn|winter)[:.!]?\s*(.*)/i);
+    if (m && +m[1] >= BIRTH - 5 && +m[1] <= 2030) {
+      start({ year: +m[1], month: null, day: null, text: m[3] || s });
+      continue;
+    }
+
+    m = s.match(new RegExp(`^(${mp})\\s+(\\d{1,2})(?:st|nd|rd|th)?[,.]?\\s+(.*)`, 'i'));
+    if (m && cY) {
+      const mk = m[1].toLowerCase();
+      if (MM[mk]) { start({ year: cY, month: MM[mk], day: +m[2], text: m[3] }); continue; }
+    }
+
+    m = s.match(/^(\d{4})\s+(?!\d)(.*)/);
+    if (m && !inM && +m[1] >= BIRTH - 5 && +m[1] <= 2030 && m[2].length > 3) {
+      start({ year: +m[1], month: null, day: null, text: m[2] });
+      continue;
+    }
+
+    // ── Divider line in pre/year context (not inside an entry): close current and skip ──
+    if ((!inM || !cur) && s.match(/^[\-—]/)) {
+      finalize();
+      continue;
+    }
+
+    // ── No match: this is a continuation line for the current entry ──
+    if (cur) {
+      cur.textLines.push(raw);
+    }
+    // else: floating text outside any entry; silently dropped
+  }
+
+  finalize();
+  return out;
+}
+
+// ── gap finder ──
+function findGaps(entries) {
+  const yrs = new Set(entries.map(e => e.year));
+  const now = new Date().getFullYear();
+  const gaps = [];
+  let gs = null;
+  for (let y = BIRTH; y <= now; y++) {
+    if (!yrs.has(y)) { if (gs === null) gs = y; }
+    else { if (gs !== null) { gaps.push({ s: gs, e: y - 1, d: y - gs }); gs = null; } }
+  }
+  if (gs !== null) gaps.push({ s: gs, e: now, d: now - gs + 1 });
+  gaps.sort((a, b) => b.d - a.d);
+  return gaps;
+}
+
+// ── format helpers ──
+// Returns the most-specific format string given filled fields.
+function formatPastEntry(year, month, day, hour, min, text) {
+  if (!year) return null;
+  if (!month) return `${year} ish: ${text}`;
+  if (!day) return `${year}${pad2(month)} ${text}`;
+  if (hour == null || min == null) return `${year}${pad2(month)}${pad2(day)} ${text}`;
+  return `${year}${pad2(month)}${pad2(day)}${pad2(hour)}${pad2(min)} ${text}`;
+}
+
+// Insert a dated entry into the appropriate month section (creating year/month sections if needed).
+// Used by both quick-now entries and past entries that fall within an existing year section.
+function insertInMonthSection(text, year, month, day, hour, min, entryText) {
+  let entry;
+  if (hour != null && min != null) {
+    entry = `${pad2(day)}${pad2(hour)}${pad2(min)}: ${entryText}`;
+  } else {
+    entry = `${pad2(day)}${ordSuf(day)}: ${entryText}`;
+  }
+  const monthName = FULL_MO[month];
+  const shortY = String(year).slice(2);
+
+  // Try to find existing month header for this month+year
+  const moRe = new RegExp(
+    `^(${monthName})\\s*['\u2018\u2019\u201A\u201C\u201D]?\\s*(?:${shortY}|${year})?\\s*=+.*$`, 'im'
+  );
+  const moMatch = text.match(moRe);
+  if (moMatch) {
+    const idx = text.indexOf(moMatch[0]);
+    const nlIdx = text.indexOf('\n', idx);
+    if (nlIdx !== -1) return text.slice(0, nlIdx + 1) + entry + '\n' + text.slice(nlIdx + 1);
+    return text + '\n' + entry + '\n';
+  }
+
+  // Find year header and create month section
+  const yrRe = new RegExp(`^=+\\s*${year}\\s*=+$`, 'm');
+  const yrMatch = text.match(yrRe);
+  if (yrMatch) {
+    const idx = text.indexOf(yrMatch[0]);
+    const nlIdx = text.indexOf('\n', idx);
+    const moHeader = `\n${monthName} '${shortY} ======\n${entry}\n`;
+    if (nlIdx !== -1) return text.slice(0, nlIdx + 1) + moHeader + text.slice(nlIdx + 1);
+    return text + moHeader;
+  }
+
+  // Create new year section before first existing year header
+  const firstYr = text.match(/^=+\s*\d{4}\s*=+$/m);
+  const block = `========== ${year} ============\n\n${monthName} '${shortY} ======\n${entry}\n\n`;
+  if (firstYr) {
+    const idx = text.indexOf(firstYr[0]);
+    return text.slice(0, idx) + block + text.slice(idx);
+  }
+  return block + text;
+}
+
+function ordSuf(n) {
+  if (n >= 11 && n <= 13) return 'th';
+  return ({ 1: 'st', 2: 'nd', 3: 'rd' })[n % 10] || 'th';
+}
+
+// Insert a formatted entry into the "pre YYYY" block (right after the header).
+function insertInPreBlock(text, formattedEntry) {
+  const preRe = /^=+\s*pre\s+\d{4}.*$/m;
+  const preM = text.match(preRe);
+  if (preM) {
+    const idx = text.indexOf(preM[0]);
+    const nlIdx = text.indexOf('\n', idx);
+    if (nlIdx !== -1) {
+      return text.slice(0, nlIdx + 1) + '\n' + formattedEntry + '\n' + text.slice(nlIdx + 1);
+    }
+  }
+  // fallback: append to end
+  return text.trimEnd() + '\n\n' + formattedEntry + '\n';
+}
+
+// Routing: insert into month section if year has a section AND day is given,
+// otherwise insert into pre block in most-specific format available.
+function insertDatedEntry(text, year, month, day, hour, min, entryText) {
+  const yrRe = new RegExp(`^=+\\s*${year}\\s*=+$`, 'm');
+  const hasYrSection = !!text.match(yrRe);
+  if (hasYrSection && month != null && day != null) {
+    return insertInMonthSection(text, year, month, day, hour, min, entryText);
+  }
+  return insertInPreBlock(text, formatPastEntry(year, month, day, hour, min, entryText));
+}
+
+// ── INCOMING query / edit helpers ──
+// Returns the start/end indices of the INCOMING section body (after the header, before the next ==header).
+function getIncomingBounds(text) {
+  const incRe = /^=+\s*INCOMING:?\s*=+.*$/im;
+  const incMatch = text.match(incRe);
+  if (!incMatch) return null;
+  const headerStart = text.indexOf(incMatch[0]);
+  const startIdx = headerStart + incMatch[0].length + (text[headerStart + incMatch[0].length] === '\n' ? 1 : 0);
+  const remaining = text.slice(startIdx);
+  const nextSecMatch = remaining.match(/^={2,}[^\n]*$/m);
+  const endIdx = nextSecMatch ? startIdx + nextSecMatch.index : text.length;
+  return { headerStart, startIdx, endIdx };
+}
+
+// Returns the list of undated memory lines from INCOMING (excluding blank lines and pure dividers).
+function getIncomingItems(text) {
+  const b = getIncomingBounds(text);
+  if (!b) return [];
+  const section = text.slice(b.startIdx, b.endIdx);
+  return section.split('\n')
+    .map(l => l.trim())
+    .filter(l => l.length > 0 && !l.match(/^[—\-=]+$/));
+}
+
+// Removes exactly ONE matching line from the INCOMING section (first match).
+// Returns the original text unchanged if the line isn't found.
+function removeIncomingLine(text, lineContent) {
+  const target = (lineContent || '').trim();
+  if (!target) return text;
+  const b = getIncomingBounds(text);
+  if (!b) return text;
+  const before = text.slice(0, b.startIdx);
+  const section = text.slice(b.startIdx, b.endIdx);
+  const after = text.slice(b.endIdx);
+  const lines = section.split('\n');
+  let found = false;
+  const newLines = [];
+  for (const line of lines) {
+    if (!found && line.trim() === target) { found = true; continue; }
+    newLines.push(line);
+  }
+  if (!found) return text;
+  return before + newLines.join('\n') + after;
+}
+
+// ── on this day / random ──
+function getOnThisDay(entries, month, day) {
+  if (month == null || day == null) return [];
+  return entries.filter(e => e.month === month && e.day === day)
+    .sort((a, b) => b.year - a.year);
+}
+
+// Returns a random entry that has both a year and some text content.
+function getRandomEntry(entries) {
+  const eligible = entries.filter(e => e.year && e.text && String(e.text).trim().length > 0);
+  if (eligible.length === 0) return null;
+  return eligible[Math.floor(Math.random() * eligible.length)];
+}
+
+// ── person profile data ──
+// Find all entries whose text mentions the given name (whole-word match).
+function getPersonEntries(entries, name) {
+  if (!name) return [];
+  const re = new RegExp('\\b' + name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b');
+  return entries
+    .filter(e => e.text && re.test(String(e.text)))
+    .sort((a, b) => {
+      if (a.year !== b.year) return a.year - b.year;
+      return (a.month || 0) - (b.month || 0) || (a.day || 0) - (b.day || 0);
+    });
+}
+
+// ── photos / browse data helpers ──
+function entriesByYear(entries, year) {
+  return entries.filter(e => e.year === year);
+}
+function entriesByYearMonth(entries, year, month) {
+  return entries.filter(e => e.year === year && e.month === month);
+}
+function entriesByDate(entries, year, month, day) {
+  return entries.filter(e => e.year === year && e.month === month && e.day === day);
+}
+
+// Calendar layout helpers (Monday-first week)
+function getMonthCalendar(year, month) {
+  const firstDay = new Date(year, month - 1, 1);
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const dow = (firstDay.getDay() + 6) % 7; // Monday=0, Sunday=6
+  return { daysInMonth, leadingBlanks: dow };
+}
+
+// ── stats ──
+function computeStats(text) {
+  const entries = parse(text);
+  const yrs = new Set();
+  const byYear = {};
+  const byYearMonth = {};
+  const dayKeys = new Set();
+  let totalWords = 0;
+  let withDay = 0;
+  for (const e of entries) {
+    if (!e.year) continue;
+    yrs.add(e.year);
+    byYear[e.year] = (byYear[e.year] || 0) + 1;
+    if (e.month) {
+      const k = e.year * 100 + e.month;
+      byYearMonth[k] = (byYearMonth[k] || 0) + 1;
+    }
+    if (e.day) {
+      withDay++;
+      dayKeys.add(e.year * 10000 + (e.month || 0) * 100 + e.day);
+    }
+    if (e.text) totalWords += String(e.text).split(/\s+/).filter(Boolean).length;
+  }
+  // longest streak
+  const dayOrdinals = [...dayKeys].map(k => {
+    const y = Math.floor(k / 10000), mo = Math.floor((k % 10000) / 100), d = k % 100;
+    return Math.floor(new Date(y, mo - 1, d).getTime() / 86400000);
+  }).sort((a, b) => a - b);
+  let streak = dayOrdinals.length > 0 ? 1 : 0;
+  let maxStreak = streak;
+  for (let i = 1; i < dayOrdinals.length; i++) {
+    if (dayOrdinals[i] === dayOrdinals[i - 1]) continue; // dup
+    if (dayOrdinals[i] === dayOrdinals[i - 1] + 1) streak++;
+    else { if (streak > maxStreak) maxStreak = streak; streak = 1; }
+  }
+  if (streak > maxStreak) maxStreak = streak;
+
+  // most productive month
+  let bestMonth = null, bestMonthCount = 0;
+  for (const [k, n] of Object.entries(byYearMonth)) {
+    if (n > bestMonthCount) { bestMonthCount = n; bestMonth = +k; }
+  }
+  // people extraction (simple heuristic)
+  const nameCounts = {};
+  const nameRe = /\b([A-Z][a-zöäüéèà]{2,}(?:\s[A-Z][a-zöäüéèà]{2,})?)\b/g;
+  const stopWords = new Set(['The','And','But','Not','Yet','Was','Had','She','He','They','We','You','I','My','Me','Us','It','Its','His','Her','Their','Our','Your','Also','Today','Yesterday','Tomorrow','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday','January','February','February','March','April','May','June','July','August','September','October','November','December','This','That','These','Those','There','Then','Than','What','When','Where','How','Why','Who','Which','Like','Just','Only','Even','One','Two','Three','Four','Five','God','Yeah','Yes','No','Well','Still','While','About','Because','After','Before','Over','Into','From','With','Last','Next','Now','Back','Down','Out','Off','Up','In','On','At','As','Is','Are','Am','Be','Been','Being','Do','Did','Does','Have','Has','Will','Would','Should','Could','May','Might','Must','Can','Get','Got','Go','Going','Went','Come','Came','See','Saw','Say','Said','Make','Made','Take','Took','Know','Knew','Think','Thought','Feel','Felt','Want','Wanted','Need','Needed','Really','Very','Super','Most','Some','Any','All','Each','Every','Both','Either','Another','Other','Much','Many','Few','More','Less','LA','NYC','US','USA','UK','OK','IT','AI','VR','TV','GQ','WE','YC','SO','IS','ARE','Life','Time','Day','Week','Month','Year','Morning','Evening','Night','Feeling','Work','Home','People','Thing','Things','Way','World','Lot','New','Old','Good','Bad','Best','Better','Worst','Worse','Great','Mad','Happy','Sad','Tired','Fun','Hard','Easy','Fucking','Actually','Maybe','Probably','Definitely','Sometimes','Always','Never','Often','Usually','Indeed','Anyway','Finally','First','Second','Third','Wtf','Omg','Btw','Bs','Idk','Imo','Tbh','Lol']);
+  for (const e of entries) {
+    if (!e.text) continue;
+    const matches = String(e.text).match(nameRe) || [];
+    for (const name of matches) {
+      if (stopWords.has(name)) continue;
+      nameCounts[name] = (nameCounts[name] || 0) + 1;
+    }
+  }
+  const topPeople = Object.entries(nameCounts)
+    .filter(([, c]) => c >= 3)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 15);
+
+  return {
+    total: entries.length,
+    years: yrs.size,
+    withDay,
+    firstYear: yrs.size > 0 ? Math.min(...yrs) : null,
+    lastYear: yrs.size > 0 ? Math.max(...yrs) : null,
+    byYear,
+    byYearMonth,
+    longestStreak: maxStreak,
+    avgWords: entries.length > 0 ? Math.round(totalWords / entries.length) : 0,
+    totalWords,
+    bestMonth,
+    bestMonthCount,
+    topPeople,
+  };
+}
+
+// Append an undated memory to the INCOMING section.
+// Flattens multi-line input into a single line. Creates the section if it doesn't exist.
+function insertIncoming(text, entryText) {
+  const flat = entryText.replace(/\s*\n\s*/g, ' ').trim();
+  const incRe = /^==\s*INCOMING:?\s*==.*$/im;
+  const incMatch = text.match(incRe);
+  if (incMatch) {
+    // Find the end of the INCOMING section — the next line starting with `==`
+    const startIdx = text.indexOf(incMatch[0]) + incMatch[0].length;
+    const remaining = text.slice(startIdx);
+    const nextSecMatch = remaining.match(/\n={2,}[^\n]*\n/);
+    if (nextSecMatch) {
+      // Insert right before the next section header, after any trailing whitespace
+      let insertPos = startIdx + nextSecMatch.index;
+      // Back up to strip trailing blank lines
+      while (insertPos > 0 && text[insertPos - 1] === '\n' && text[insertPos - 2] === '\n') insertPos--;
+      return text.slice(0, insertPos) + '\n' + flat + text.slice(insertPos);
+    }
+    // No next section — append to end of file
+    return text.trimEnd() + '\n' + flat + '\n';
+  }
+  // No INCOMING section — create one at the very top
+  const block = '== INCOMING: ==\n' + flat + '\n\n';
+  return block + text;
+}
+
+// ── questions ──
+function ageGrp(age) {
+  if (age <= 5) return 'baby';
+  if (age <= 12) return 'kid';
+  if (age <= 18) return 'teen';
+  if (age <= 25) return 'young';
+  return 'adult';
+}
+const QBank = {
+  baby: [
+    "You're {age}, it's {year}. What's your earliest sense memory from around then? A smell, a texture, a sound?",
+    "Where are you living in {year}? What does the home look like through a {age}-year-old's eyes?",
+    "Who are the big people in your world at age {age}? What do they feel like to be around?",
+    "Tell your grandkids: 'When I was only {age}, the thing I loved most was...'",
+    "What's the vibe of a normal day at age {age}? Safe? Chaotic? Warm? Loud?",
+    "Is there a toy, blanket, or object you remember from around {year}?",
+    "What do you eat at age {age}? What's tiny-you's absolute favorite food?",
+    "Any flashes of memory from {year}? Even fragments count. A color, a room, a face.",
+    // research-backed additions
+    "Close your eyes. You're {age}. What feels safe in your body right now? What's tight, warm, soft?",
+    "Even just one image from {year} — a face, a corner of a room, a color. What surfaces?",
+    "If you asked your mom about {year}, what would she say you were like? (You can actually ask her.)",
+  ],
+  kid: [
+    "It's {year}, you're {age}. What's on TV after school?",
+    "What does your room look like at age {age}? Posters? Mess? Secret stash?",
+    "What's the coolest thing you own in {year}?",
+    "You're {age}. Who's your crew? What do you get into together?",
+    "What's the dumbest thing you did at age {age} that you'd 100% do again?",
+    "Tell your grandkids: 'When I was {age}, the thing that blew my mind was...'",
+    "Your grandkid is playing a game. You go: 'Back in {year}, WE played...' What was it?",
+    "What scares you at age {age}? A movie, a person, the dark, a sound?",
+    "It's Christmas {year}. What do you want more than anything?",
+    "What does the schoolyard feel like in {year}? Who rules it? Where do you fit?",
+    "What food is peak age-{age} for you? Something your mom made? A candy? A snack?",
+    "Any teachers from around {year} that left a mark, good or bad?",
+    // research-backed additions
+    "Close your eyes. You're {age} in {year}. Walk into your bedroom — present tense. What do you smell? What's on the walls? What sound is coming from somewhere else in the house?",
+    "Describe ONE specific afternoon from {year}. Just one. Where are you, who's with you, what are you doing right now?",
+    "Tell your grandkids what being {age} in {year} actually felt like — what was a normal day?",
+    "Is there anything from age {age} you've never told anyone but always remembered?",
+    "If {year} is a chapter in the book of your life, what's the chapter title?",
+  ],
+  teen: [
+    "It's {year}. What song is stuck in your head on repeat?",
+    "You're {age}. What does your room smell like? Be honest.",
+    "What are you procrastinating on in {year}?",
+    "Who gives you butterflies at age {age}?",
+    "{year}, age {age}. What are you obsessed with that adults just don't get?",
+    "What's the bravest or dumbest thing you did at {age}? (Often the same thing.)",
+    "If {year} were a movie, what genre would it be and what's the trailer scene?",
+    "Your grandkid says 'school sucks.' You go: 'Let me tell you about {year}...' Go.",
+    "What's your look in {year}? Hair, clothes, vibe. Paint the picture.",
+    "It's Friday night, you're {age}. Where are you and who's with you?",
+    "What website, game, or show are you spending way too much time on in {year}?",
+    "What do you and your best friend talk about at age {age}? What's THE topic?",
+    "What are you proud of at {age} that nobody really knows about?",
+    "You're {age}. What do you think your life will look like at 30?",
+    "Walk your grandkids through a regular school day in {year}. Boring parts included.",
+    // research-backed additions
+    "Close your eyes. It's {year}. Walk into school — present tense. What do you smell first? Hear first? Who do you say hi to?",
+    "Describe ONE specific day from {year}. Just one. Who, where, what were you thinking and feeling?",
+    "What was the peak experience of {year} — the single highest moment?",
+    "What was the lowest point of {year} — and what got you through it?",
+    "What turning point happened in {year}, even if you didn't notice it then?",
+    "Tell your grandkids what being {age} in {year} felt like — what were you obsessed with?",
+    "If your life is a book, what's the chapter title for {year}?",
+    "Is there anything from {year} you've never told anyone but want to tell now?",
+  ],
+  young: [
+    "It's {year}, you're {age}. What's your morning look like? Where do you wake up?",
+    "What do you eat most in {year}? Budget meals? Takeout? Someone else's cooking?",
+    "You're {age}. What keeps you up at night — excitement or anxiety?",
+    "What's the view from your window in {year}?",
+    "Age {age}, {year}. What are you building, breaking, or running from?",
+    "Who do you call when shit hits the fan in {year}?",
+    "What's the biggest lie you're telling yourself at {age}?",
+    "Your grandkid asks: 'Were you cool in your twenties?' What's your honest answer for {year}?",
+    "Tell them about the adventure of {year}. Even if the adventure was just surviving.",
+    "What's your vice in {year}? The thing you do way too much of?",
+    "Describe your friend group at age {age}. Who makes you laugh hardest?",
+    "What's the best night out you had around {year}? Set the scene.",
+    "{year}: what job, project, or hustle are you in? Do you love it or just endure it?",
+    "You're {age}. What do you want that feels impossibly far away?",
+    "What discovery or realization hits you around {year} that actually changes something?",
+    // research-backed additions
+    "Close your eyes. {year}, you're {age}. Walk through your morning in present tense. What do you smell first? What goes in your mouth first?",
+    "Describe one specific Tuesday from {year}. The whole day, present tense if you can.",
+    "What was the peak experience of {year}? The single highest moment.",
+    "What was the lowest point of {year}? What got you through it?",
+    "What turning point happened in {year}, even if you didn't notice it then?",
+    "If your life is a book, what's the chapter title for {year}?",
+    "Is there anything from {year} you've never told anyone but want to tell now?",
+  ],
+  adult: [
+    "It's {year}, age {age}. Walk me through a random Tuesday.",
+    "What's making you laugh in {year}? A show, a person, a meme, a situation?",
+    "What does your space look like in {year}? Where do you spend the most time?",
+    "What are you drinking too much of in {year}?",
+    "{year}. What are you proud of that nobody really notices?",
+    "What's the thing you keep meaning to do in {year} but never actually get to?",
+    "Tell your grandkids what being {age} in {year} was like — what's a moment that defined the year?",
+    "Your grandkid is dealing with the same thing you're dealing with in {year}. What do you tell them?",
+    "Who's the funniest person in your life in {year}?",
+    "What's your comfort routine in {year}? The thing that resets you after a bad day?",
+    "What's the most alive you felt in {year}? Describe the moment.",
+    "{year}: what's the background anxiety? The thing always humming underneath?",
+    "What are you reading, watching, or playing in {year} that actually gets to you?",
+    "Describe a perfect weekend in {year}. Did it ever actually happen?",
+    // research-backed additions
+    "Close your eyes. {year}. Walk through a regular Tuesday morning in present tense. What do you smell first?",
+    "Describe ONE specific day from {year}. Who, where, what were you thinking? Present tense if you can.",
+    "What was the peak experience of {year}? The single moment you'd put in a hall of fame.",
+    "What was the lowest point of {year}? What got you through it?",
+    "What turning point happened in {year}, even if you didn't notice it then?",
+    "If your life is a book, what's {year}'s chapter title?",
+    "Is there anything from {year} you've never told anyone but want to tell now?",
+  ],
+};
+const usedQ = new Set();
+function getQ(year) {
+  const age = year - BIRTH, g = ageGrp(age), pool = QBank[g];
+  const avail = pool.filter((_, i) => !usedQ.has(`${g}-${i}`));
+  const src = avail.length > 0 ? avail : (usedQ.forEach(k => { if (k.startsWith(g)) usedQ.delete(k); }), pool);
+  const pick = src[Math.floor(Math.random() * src.length)];
+  usedQ.add(`${g}-${pool.indexOf(pick)}`);
+  return pick.replace(/\{year\}/g, year).replace(/\{age\}/g, age);
+}
+
+// ── state ──
+let S = { text: '', entries: [], gaps: [], gi: 0, yr: null, skipped: new Set(), ivCount: 0, origYears: new Set(), sessionYears: new Set() };
+
+const STORAGE_KEY = 'autobiographer.text';
+const COUNT_KEY = 'autobiographer.lastKnownCount';
+
+// ── write guardian (pure, testable) ──
+// Checks whether a proposed replacement of `oldText` with `newText` is safe given an expected delta.
+// Returns { ok: boolean, reason: string }.
+function guardWriteCheck(oldText, newText, expectedDelta) {
+  try {
+    const oldEntries = parse(oldText);
+    const newEntries = parse(newText);
+    const actualDelta = newEntries.length - oldEntries.length;
+    if (expectedDelta > 0 && actualDelta < expectedDelta) {
+      return { ok: false, reason: `expected +${expectedDelta} entries but got ${actualDelta >= 0 ? '+' : ''}${actualDelta}` };
+    }
+    if (expectedDelta >= 0 && newText.length < oldText.length) {
+      return { ok: false, reason: `text shrank (${oldText.length} → ${newText.length} bytes)` };
+    }
+    // Every significant line in old must survive
+    const oldLines = oldText.split('\n').map(l => l.trim()).filter(l => l.length > 20);
+    for (const line of oldLines) {
+      if (!newText.includes(line)) {
+        return { ok: false, reason: `line missing: "${line.slice(0, 50)}..."` };
+      }
+    }
+    return { ok: true, reason: 'ok' };
+  } catch (e) {
+    return { ok: false, reason: 'guardian crashed: ' + e.message };
+  }
+}
+
+// Side-effecting wrapper used by all save operations. Reads S.text, calls guardWriteCheck,
+// surfaces the warning on failure, and returns true/false.
+function guardWrite(newText, expectedDelta, opName) {
+  const result = guardWriteCheck(S.text, newText, expectedDelta);
+  if (!result.ok) {
+    showIntegrityWarning(
+      `Save blocked: "${opName}" — ${result.reason}. Your change was NOT saved. ` +
+      `Download your current state immediately as a backup.`
+    );
+    return false;
+  }
+  return true;
+}
+
+// Wraps S.text assignment + saveText with a delta check.
+// Returns true on success, false if blocked.
+function commitText(newText, expectedDelta, opName) {
+  if (!guardWrite(newText, expectedDelta, opName)) return false;
+  S.text = newText;
+  saveText();
+  // Update the last known count
+  try {
+    localStorage.setItem(COUNT_KEY, String(parse(S.text).length));
+  } catch (e) {}
+  return true;
+}
+
+function showIntegrityWarning(msg) {
+  const el = document.getElementById('integrityWarning');
+  const msgEl = document.getElementById('integrityMsg');
+  if (el && msgEl) {
+    msgEl.textContent = msg;
+    el.style.display = 'block';
+  }
+  console.error('[Integrity]', msg);
+}
+
+function hideIntegrityWarning() {
+  const el = document.getElementById('integrityWarning');
+  if (el) el.style.display = 'none';
+}
+
+// Checked on load: warn if entry count unexpectedly dropped since last session.
+function checkIntegrityOnLoad() {
+  try {
+    const lastKnown = parseInt(localStorage.getItem(COUNT_KEY) || '0', 10);
+    const current = parse(S.text).length;
+    if (lastKnown > 0 && current < lastKnown - 1) {
+      // Allow a small tolerance (1 entry) in case of user edits
+      showIntegrityWarning(
+        `Entry count dropped from ${lastKnown} to ${current} since last session. ` +
+        `This could indicate data loss. If you expected this (e.g. you edited the file manually), dismiss this warning. ` +
+        `Otherwise, do NOT make any changes and restore from your most recent backup.`
+      );
+    } else {
+      // Record the current count for next time
+      localStorage.setItem(COUNT_KEY, String(current));
+    }
+  } catch (e) { console.error('Integrity check crashed:', e); }
+}
+
+function saveText() {
+  try {
+    localStorage.setItem(STORAGE_KEY, S.text);
+    localStorage.setItem('autobiographer.savedAt', String(Date.now()));
+    flashSavedBadge();
+  } catch (e) { console.error('localStorage save failed:', e); }
+}
+
+function loadFromStorage() {
+  try {
+    const t = localStorage.getItem(STORAGE_KEY);
+    if (t && t.length > 0) {
+      S.text = t;
+      S.entries = parse(S.text);
+      S.origYears = new Set(S.entries.map(e => e.year));
+      S.sessionYears = new Set();
+      S.gaps = findGaps(S.entries);
+      S.ivCount = 0;
+      S.skipped = new Set();
+      usedQ.clear();
+      checkIntegrityOnLoad();
+      overview();
+      return true;
+    }
+  } catch (e) { console.error('localStorage load failed:', e); }
+  return false;
+}
+
+function flashSavedBadge() {
+  const el = document.getElementById('savedBadge');
+  if (!el) return;
+  el.classList.add('show');
+  clearTimeout(flashSavedBadge._t);
+  flashSavedBadge._t = setTimeout(() => el.classList.remove('show'), 1500);
+}
+
+function refresh() {
+  S.entries = parse(S.text);
+  S.gaps = findGaps(S.entries);
+}
+
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('s-' + id).classList.add('active');
+}
+
+function download() {
+  const blob = new Blob([S.text], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'autobiography.txt';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+// ── overview ──
+// Renders the below-the-fold stats/timeline/gaps/incoming-count UI.
+// Called by overview() and after each save so the user can see progress reflected below.
+function updateBelowFold() {
+  const { entries, gaps } = S;
+  const covYrs = new Set(entries.map(e => e.year));
+  const now = new Date().getFullYear();
+  const total = now - BIRTH + 1;
+
+  document.getElementById('stats').innerHTML = `
+    <div class="st"><div class="v">${entries.length}</div><div class="l">entries</div></div>
+    <div class="st"><div class="v">${covYrs.size}/${total}</div><div class="l">years</div></div>
+    <div class="st"><div class="v">${gaps.reduce((s,g)=>s+g.d,0)}</div><div class="l">blind spot yrs</div></div>
+    <div class="st"><div class="v">${S.sessionYears.size}</div><div class="l">added</div></div>`;
+
+  let h = '<div class="tl-grid">';
+  for (let y = BIRTH; y <= now; y++) {
+    const isNew = S.sessionYears.has(y) && !S.origYears.has(y);
+    const cls = isNew ? 'nw' : covYrs.has(y) ? 'cov' : 'emp';
+    h += `<div class="tl-c ${cls}" data-tip="${y} (age ${y-BIRTH})"></div>`;
+  }
+  h += '</div><div class="tl-labels">';
+  for (let y = BIRTH; y <= now; y++)
+    h += `<div class="tl-lbl">${y % 5 === 0 ? "'" + String(y).slice(2) : ''}</div>`;
+  h += '</div>';
+  document.getElementById('timeline').innerHTML = h;
+
+  let gl = '';
+  if (gaps.length === 0) {
+    gl = '<p style="color:var(--dim);font-style:italic;padding:0.5rem 0">Every year covered.</p>';
+  } else {
+    for (const g of gaps) {
+      const lbl = g.s === g.e ? `${g.s}` : `${g.s}\u2013${g.e}`;
+      const as = g.s - BIRTH, ae = g.e - BIRTH;
+      const albl = g.s === g.e ? `age ${as}` : `ages ${as}\u2013${ae}`;
+      gl += `<div class="gap-item"><div><div class="yrs">${lbl}</div><div class="meta">${albl}</div></div><div class="dur">${g.d} yr${g.d>1?'s':''}</div></div>`;
+    }
+  }
+  document.getElementById('gapList').innerHTML = gl;
+
+  // Show incoming count
+  const iiCount = getIncomingItems(S.text).length;
+  const iiBtn = document.getElementById('incomingIvBtn');
+  iiBtn.textContent = iiCount > 0 ? `Process incoming (${iiCount})` : 'Process incoming';
+  iiBtn.disabled = iiCount === 0;
+  iiBtn.style.opacity = iiCount === 0 ? '0.4' : '1';
+
+  renderOnThisDay();
+}
+
+// Full overview render. Only called on first load, file import, or explicit return from
+// another screen. Day-to-day interactions (saving an interview answer) use updateBelowFold
+// and renderHomeInterview directly so we don't disturb the user's typing context.
+function overview() {
+  refresh();
+  updateBelowFold();
+  document.getElementById('quickArea').value = '';
+  renderHomeInterview(true);
+  show('overview');
+}
+
+// ── quick now entry ──
+function quickSave() {
+  const txt = document.getElementById('quickArea').value.trim();
+  if (!txt) return;
+  const now = new Date();
+  const candidate = insertInMonthSection(
+    S.text, now.getFullYear(), now.getMonth() + 1, now.getDate(),
+    now.getHours(), now.getMinutes(), txt
+  );
+  if (!commitText(candidate, 1, 'Quick entry')) return;
+  S.sessionYears.add(now.getFullYear());
+  download();
+  toast('Saved & downloaded');
+  // Clear just the quick entry and refresh below-the-fold stats/timeline.
+  // Don't touch the interview question the user is currently looking at.
+  document.getElementById('quickArea').value = '';
+  refresh();
+  updateBelowFold();
+}
+
+// ── past memory ──
+function readPastFields() {
+  const yr = +document.getElementById('pastYr').value || null;
+  const mo = +document.getElementById('pastMo').value || null;
+  const dy = +document.getElementById('pastDy').value || null;
+  const tm = document.getElementById('pastTm').value;
+  let hr = null, mi = null;
+  if (tm) { const p = tm.split(':'); hr = +p[0]; mi = +p[1]; }
+  return { yr, mo, dy, hr, mi };
+}
+
+function updatePreview() {
+  const { yr, mo, dy, hr, mi } = readPastFields();
+  const txt = document.getElementById('pastTxt').value || '...';
+  const el = document.getElementById('pastPrev');
+  if (!yr) { el.textContent = 'enter a year to see preview'; return; }
+  const formatted = formatPastEntry(yr, mo, dy, hr, mi, txt);
+  el.innerHTML = 'will save as: <span class="fmt">' + formatted + '</span>';
+}
+
+function pastSave() {
+  const { yr, mo, dy, hr, mi } = readPastFields();
+  if (!yr) { toast('Year is required'); return; }
+  const txt = document.getElementById('pastTxt').value.trim();
+  if (!txt) { toast('Memory is empty'); return; }
+  const candidate = insertDatedEntry(S.text, yr, mo, dy, hr, mi, txt);
+  if (!commitText(candidate, 1, 'Past memory')) return;
+  S.sessionYears.add(yr);
+  download();
+  toast('Saved & downloaded');
+  resetPastForm();
+  closeSecondaryForms();
+  overview();
+}
+
+function resetPastForm() {
+  ['pastYr','pastMo','pastDy','pastTm','pastTxt'].forEach(id => document.getElementById(id).value = '');
+  updatePreview();
+}
+
+// ── incoming memory ──
+function incomingSaveFn() {
+  const txt = document.getElementById('incomingTxt').value.trim();
+  if (!txt) { toast('Memory is empty'); return; }
+  const candidate = insertIncoming(S.text, txt);
+  // Incoming items don't become parseable entries, so expected delta is 0.
+  if (!commitText(candidate, 0, 'Undated memory')) return;
+  download();
+  toast('Saved & downloaded');
+  document.getElementById('incomingTxt').value = '';
+  closeSecondaryForms();
+  overview();
+}
+
+// ── viewer ──
+function escHtml(s) {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function renderViewer(searchTerm) {
+  const q = (searchTerm || '').trim().toLowerCase();
+  const lines = S.text.split('\n');
+  const mp = Object.keys(MM).join('|');
+  const moRe = new RegExp(`^(${mp})\\s*['\u2018\u2019\u201A\u201C\u201D]?\\s*\\d{0,4}\\s*=+`, 'i');
+
+  const years = [];
+  let html = '';
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    // year header
+    let m = trimmed.match(/^=+\s*(\d{4})\s*=+$/);
+    if (m) {
+      years.push(+m[1]);
+      html += `<span class="yr-h" id="yr-${m[1]}">${escHtml(line)}</span>`;
+      continue;
+    }
+    // pre header
+    m = trimmed.match(/^=+\s*pre\s+\d{4}/i);
+    if (m) {
+      html += `<span class="pre-h" id="yr-pre">${escHtml(line)}</span>`;
+      continue;
+    }
+    // INCOMING / other section
+    m = trimmed.match(/^==\s*\S+.*==/);
+    if (m) {
+      html += `<span class="sec-h" id="yr-incoming">${escHtml(line)}</span>`;
+      continue;
+    }
+    // month header
+    if (moRe.test(trimmed)) {
+      html += `<span class="mo-h">${escHtml(line)}</span>\n`;
+      continue;
+    }
+    // date-prefixed entries
+    let rendered = escHtml(line);
+    m = trimmed.match(/^(\d{6,12})([.:]\s+|\s+)/);
+    if (m) {
+      const datePart = m[1];
+      const rest = line.slice(line.indexOf(datePart) + datePart.length);
+      rendered = `<span class="date">${escHtml(datePart)}</span>${escHtml(rest)}`;
+    } else {
+      m = trimmed.match(/^(\d{4}-\d{2}(?:-\d{2})?)\s+/);
+      if (m) {
+        rendered = `<span class="date-iso">${escHtml(m[1])}</span>${escHtml(line.slice(m[1].length))}`;
+      } else {
+        m = trimmed.match(/^(\d{4}(?:-\d{2,4})?\s*-?ish)[:.!]?\s*/i);
+        if (m) {
+          rendered = `<span class="date-iso">${escHtml(m[0].trimEnd())}</span>${escHtml(line.slice(m[0].length))}`;
+        } else {
+          m = trimmed.match(/^(\d+(?:st|nd|rd|th))[.:,]?\s*/i);
+          if (m) {
+            rendered = `<span class="date">${escHtml(m[0].trimEnd())}</span>${escHtml(line.slice(m[0].length))}`;
+          }
+        }
+      }
+    }
+    html += rendered + '\n';
+  }
+
+  // search highlight
+  if (q) {
+    const re = new RegExp('(' + q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
+    // only highlight in text content, not in tag attributes; a simple approach:
+    html = html.replace(/>([^<]+)</g, (full, txt) => '>' + txt.replace(re, '<mark>$1</mark>') + '<');
+  }
+
+  document.getElementById('viewerContent').innerHTML = html;
+
+  // year jump navigation
+  years.sort((a, b) => b - a);
+  let jumpHtml = '';
+  for (const y of years) {
+    jumpHtml += `<a data-target="yr-${y}">${y}</a>`;
+  }
+  jumpHtml += '<a data-target="yr-pre">pre</a>';
+  jumpHtml += '<a data-target="yr-incoming">incoming</a>';
+  document.getElementById('yearJump').innerHTML = jumpHtml;
+
+  // wire up jump clicks
+  document.querySelectorAll('.year-jump a').forEach(a => {
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      const el = document.getElementById(a.dataset.target);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+}
+
+function openViewer() {
+  renderViewer();
+  show('viewer');
+  window.scrollTo(0, 0);
+}
+
+// ── on this day / memory panel ──
+// Always shows something: today's matches if any, otherwise a random memory.
+// Refresh button cycles to a new random one.
+function renderOnThisDay() {
+  const now = new Date();
+  const month = now.getMonth() + 1;
+  const day = now.getDate();
+  const matches = getOnThisDay(S.entries, month, day);
+  const el = document.getElementById('onThisDay');
+  const labelEl = document.getElementById('otdLabel');
+  const dateEl = document.getElementById('otdDate');
+  const refreshEl = document.getElementById('otdRefresh');
+
+  if (matches.length > 0) {
+    labelEl.textContent = 'on this day';
+    dateEl.textContent = `(${FULL_MO[month]} ${day})`;
+    refreshEl.style.display = 'none';
+    let html = '';
+    const curYear = now.getFullYear();
+    for (const m of matches) {
+      const yearsAgo = curYear - m.year;
+      const agoLabel = yearsAgo === 0 ? 'today' : yearsAgo === 1 ? '1 year ago' : `${yearsAgo} years ago`;
+      const txt = (m.text || '').substring(0, 300);
+      const tr = (m.text || '').length > 300 ? '…' : '';
+      html += `<div class="otd-entry"><span class="year">${m.year}</span>${escHtml(txt)}${tr}<span class="ago">${agoLabel}</span></div>`;
+    }
+    document.getElementById('otdEntries').innerHTML = html;
+    el.style.display = 'block';
+    return;
+  }
+
+  // Fallback: random memory
+  const r = getRandomEntry(S.entries);
+  if (!r) { el.style.display = 'none'; return; }
+  labelEl.textContent = 'a memory';
+  // build a date label from what's available
+  let dateLabel = String(r.year);
+  if (r.month) dateLabel = `${FULL_MO[r.month]} ${r.year}`;
+  if (r.month && r.day) dateLabel = `${FULL_MO[r.month]} ${r.day}, ${r.year}`;
+  dateEl.textContent = `(${dateLabel})`;
+  refreshEl.style.display = 'inline';
+  const txt = (r.text || '').substring(0, 400);
+  const tr = (r.text || '').length > 400 ? '…' : '';
+  const ageLabel = `age ${r.year - BIRTH}`;
+  document.getElementById('otdEntries').innerHTML =
+    `<div class="otd-entry"><span class="year">${r.year}</span>${escHtml(txt)}${tr}<span class="ago">${ageLabel}</span></div>`;
+  el.style.display = 'block';
+}
+
+// ── stats dashboard ──
+function openStats() {
+  const stats = computeStats(S.text);
+  const now = new Date().getFullYear();
+  const monthName = stats.bestMonth ? `${FULL_MO[stats.bestMonth % 100]} ${Math.floor(stats.bestMonth / 100)}` : '—';
+  let html = `<div class="stats-grid">
+    <div class="stats-card"><div class="v">${stats.total}</div><div class="l">total entries</div></div>
+    <div class="stats-card"><div class="v">${stats.years}</div><div class="l">years covered</div><div class="sub">of ${now - BIRTH + 1} possible</div></div>
+    <div class="stats-card"><div class="v">${stats.longestStreak}</div><div class="l">longest streak</div><div class="sub">consecutive days</div></div>
+    <div class="stats-card"><div class="v">${stats.avgWords}</div><div class="l">avg words/entry</div><div class="sub">${stats.totalWords.toLocaleString()} total</div></div>
+    <div class="stats-card"><div class="v">${stats.firstYear || '—'}</div><div class="l">first year</div></div>
+    <div class="stats-card"><div class="v">${stats.withDay}</div><div class="l">date-precise</div><div class="sub">entries with day</div></div>
+    <div class="stats-card"><div class="v">${bestMonthShort(stats.bestMonth)}</div><div class="l">most productive</div><div class="sub">${stats.bestMonthCount} entries</div></div>
+    <div class="stats-card"><div class="v">${S.gaps.reduce((s, g) => s + g.d, 0)}</div><div class="l">blind spot yrs</div><div class="sub">${S.gaps.length} gaps</div></div>
+  </div>`;
+
+  // entries per year bar chart
+  html += `<div class="stats-section"><h3>Entries per year</h3><div class="bar-chart">`;
+  const yearsSorted = Object.keys(stats.byYear).map(Number).sort((a, b) => b - a);
+  const maxCount = Math.max(...Object.values(stats.byYear));
+  for (const y of yearsSorted) {
+    const n = stats.byYear[y];
+    const pct = (n / maxCount) * 100;
+    html += `<div class="bar-row"><div class="bar-label">${y}</div><div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div><div class="bar-count">${n}</div></div>`;
+  }
+  html += `</div></div>`;
+
+  // top people
+  if (stats.topPeople.length > 0) {
+    html += `<div class="stats-section"><h3>People mentioned (heuristic)</h3><div class="people-list">`;
+    for (const [name, cnt] of stats.topPeople) {
+      html += `<a class="person-chip" data-person="${escHtml(name)}">${escHtml(name)}<span class="cnt">${cnt}</span></a>`;
+    }
+    html += `</div></div>`;
+  }
+
+  document.getElementById('statsContent').innerHTML = html;
+  show('stats');
+  window.scrollTo(0, 0);
+}
+
+function bestMonthShort(key) {
+  if (!key) return '—';
+  const y = Math.floor(key / 100), m = key % 100;
+  return `${MN[m]} '${String(y).slice(2)}`;
+}
+const MN = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+// ── photos browser ──
+let photosState = { level: 'years', year: null, month: null, day: null };
+
+function openPhotos() {
+  photosState = { level: 'years', year: null, month: null, day: null };
+  renderPhotos();
+  show('photos');
+  window.scrollTo(0, 0);
+}
+
+function renderPhotos() {
+  const back = document.getElementById('photosBack');
+  if (photosState.level === 'years') {
+    back.textContent = '← overview';
+    renderPhotosYears();
+  } else if (photosState.level === 'months') {
+    back.textContent = '← years';
+    renderPhotosMonths(photosState.year);
+  } else if (photosState.level === 'days') {
+    back.textContent = '← ' + photosState.year;
+    renderPhotosDays(photosState.year, photosState.month);
+  } else if (photosState.level === 'reading') {
+    back.textContent = '← ' + FULL_MO[photosState.month] + ' ' + photosState.year;
+    renderPhotosReading(photosState.year, photosState.month, photosState.day);
+  }
+}
+
+function photosBack() {
+  if (photosState.level === 'reading') {
+    photosState = { level: 'days', year: photosState.year, month: photosState.month, day: null };
+    renderPhotos();
+  } else if (photosState.level === 'days') {
+    photosState = { level: 'months', year: photosState.year, month: null, day: null };
+    renderPhotos();
+  } else if (photosState.level === 'months') {
+    photosState = { level: 'years', year: null, month: null, day: null };
+    renderPhotos();
+  } else {
+    overview();
+  }
+}
+
+function renderPhotosYears() {
+  document.getElementById('photosHeader').textContent = 'Years';
+  const now = new Date().getFullYear();
+  // Compute counts and density per year
+  const byYear = {};
+  for (const e of S.entries) {
+    if (e.year) byYear[e.year] = (byYear[e.year] || 0) + 1;
+  }
+  const maxCount = Math.max(1, ...Object.values(byYear));
+
+  let html = '<div class="photos-years">';
+  for (let y = now; y >= BIRTH; y--) {
+    const cnt = byYear[y] || 0;
+    const isEmpty = cnt === 0;
+    const widthPct = isEmpty ? 0 : Math.max(15, (cnt / maxCount) * 100);
+    html += `<div class="photos-year-card${isEmpty ? ' empty' : ''}" data-year="${y}">
+      <div class="yr">${y}</div>
+      <div class="age">age ${y - BIRTH}</div>
+      <div class="cnt">${cnt > 0 ? cnt + ' entr' + (cnt === 1 ? 'y' : 'ies') : '—'}</div>
+      <div class="density" style="width:${widthPct}%"></div>
+    </div>`;
+  }
+  html += '</div>';
+  document.getElementById('photosContent').innerHTML = html;
+
+  // wire clicks
+  document.querySelectorAll('.photos-year-card:not(.empty)').forEach(card => {
+    card.addEventListener('click', () => {
+      photosState = { level: 'months', year: +card.dataset.year, month: null, day: null };
+      renderPhotos();
+      window.scrollTo(0, 0);
+    });
+  });
+}
+
+function renderPhotosMonths(year) {
+  document.getElementById('photosHeader').textContent = String(year);
+  const yearEntries = entriesByYear(S.entries, year);
+
+  let html = '<div class="photos-months">';
+  for (let m = 1; m <= 12; m++) {
+    const cnt = yearEntries.filter(e => e.month === m).length;
+    const isEmpty = cnt === 0;
+    html += `<div class="photos-month-card${isEmpty ? ' empty' : ''}" data-year="${year}" data-month="${m}">
+      <div class="mo">${MN[m]}</div>
+      <div class="cnt">${cnt > 0 ? cnt : '—'}</div>
+    </div>`;
+  }
+  html += '</div>';
+
+  // also show year-only entries (no month) below if any
+  const yearOnly = yearEntries.filter(e => !e.month);
+  if (yearOnly.length > 0) {
+    html += `<div class="stats-section"><h3>year-only entries</h3>`;
+    for (const e of yearOnly) {
+      const txt = String(e.text || '').substring(0, 400);
+      html += `<div class="photos-reading-entry"><div class="body">${escHtml(txt)}</div></div>`;
+    }
+    html += `</div>`;
+  }
+
+  document.getElementById('photosContent').innerHTML = html;
+
+  document.querySelectorAll('.photos-month-card:not(.empty)').forEach(card => {
+    card.addEventListener('click', () => {
+      photosState = { level: 'days', year: +card.dataset.year, month: +card.dataset.month, day: null };
+      renderPhotos();
+      window.scrollTo(0, 0);
+    });
+  });
+}
+
+function renderPhotosDays(year, month) {
+  document.getElementById('photosHeader').textContent = `${FULL_MO[month]} ${year}`;
+  const monthEntries = entriesByYearMonth(S.entries, year, month);
+  const cal = getMonthCalendar(year, month);
+
+  // Day-of-week header (Mon-first)
+  let html = '<div class="photos-cal-wrap">';
+  html += '<div class="photos-cal-dow"><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span><span>Su</span></div>';
+  html += '<div class="photos-cal">';
+  for (let i = 0; i < cal.leadingBlanks; i++) {
+    html += '<div class="photos-day-cell blank"></div>';
+  }
+  for (let d = 1; d <= cal.daysInMonth; d++) {
+    const dayEntries = monthEntries.filter(e => e.day === d);
+    const cnt = dayEntries.length;
+    const has = cnt > 0;
+    const dotCls = cnt >= 3 ? 'dot dot3' : cnt === 2 ? 'dot dot2' : 'dot';
+    html += `<div class="photos-day-cell${has ? ' has-entry' : ''}" data-day="${d}">
+      <div class="num">${d}</div>
+      ${has ? `<div class="${dotCls}"></div>` : ''}
+    </div>`;
+  }
+  html += '</div></div>';
+
+  // Also show entries that have a month but no day
+  const monthOnly = monthEntries.filter(e => !e.day);
+  if (monthOnly.length > 0) {
+    html += `<div class="stats-section"><h3>${FULL_MO[month]} ${year} — no specific day</h3>`;
+    for (const e of monthOnly) {
+      const txt = String(e.text || '').substring(0, 400);
+      html += `<div class="photos-reading-entry"><div class="body">${escHtml(txt)}</div></div>`;
+    }
+    html += `</div>`;
+  }
+
+  document.getElementById('photosContent').innerHTML = html;
+
+  document.querySelectorAll('.photos-day-cell.has-entry').forEach(cell => {
+    cell.addEventListener('click', () => {
+      photosState = { level: 'reading', year, month, day: +cell.dataset.day };
+      renderPhotos();
+      window.scrollTo(0, 0);
+    });
+  });
+}
+
+function renderPhotosReading(year, month, day) {
+  const dateStr = `${FULL_MO[month]} ${day}, ${year}`;
+  document.getElementById('photosHeader').textContent = dateStr;
+  const entries = entriesByDate(S.entries, year, month, day)
+    .sort((a, b) => {
+      const at = (a.hour || 0) * 60 + (a.minute || 0);
+      const bt = (b.hour || 0) * 60 + (b.minute || 0);
+      return bt - at; // newest first
+    });
+  let html = '';
+  if (entries.length === 0) {
+    html = '<div class="photos-empty">No entries for this day.</div>';
+  } else {
+    for (const e of entries) {
+      let when = '';
+      if (e.hour != null) when = `${pad2(e.hour)}:${pad2(e.minute)}`;
+      const ageL = `age ${year - BIRTH}`;
+      html += `<div class="photos-reading-entry"><div class="when">${escHtml(when)}${when ? ' · ' : ''}${escHtml(ageL)}</div><div class="body">${escHtml(String(e.text || ''))}</div></div>`;
+    }
+  }
+  document.getElementById('photosContent').innerHTML = html;
+}
+
+// ── person profile ──
+function openPerson(name) {
+  const matches = getPersonEntries(S.entries, name);
+  if (matches.length === 0) { toast('No entries found for ' + name); return; }
+  document.getElementById('personHeader').textContent = name;
+
+  // summary stats
+  const years = matches.map(e => e.year);
+  const firstYear = Math.min(...years);
+  const lastYear = Math.max(...years);
+  const yearSet = new Set(years);
+
+  // mini bar chart by year
+  const byYr = {};
+  for (const e of matches) byYr[e.year] = (byYr[e.year] || 0) + 1;
+  const allYears = [];
+  for (let y = firstYear; y <= lastYear; y++) allYears.push(y);
+  const maxCnt = Math.max(...Object.values(byYr));
+
+  let html = `<div class="person-summary">
+    <div class="item"><div class="v">${matches.length}</div><div class="l">mentions</div></div>
+    <div class="item"><div class="v">${yearSet.size}</div><div class="l">years</div></div>
+    <div class="item"><div class="v">${firstYear}</div><div class="l">first mention</div></div>
+    <div class="item"><div class="v">${lastYear}</div><div class="l">last mention</div></div>
+  </div>`;
+
+  html += `<div class="stats-section" style="margin-top:0;padding-top:0;border-top:none">
+    <h3>mentions per year</h3>
+    <div class="bar-chart person-mini-bar">`;
+  for (const y of allYears) {
+    const n = byYr[y] || 0;
+    const pct = (n / maxCnt) * 100;
+    html += `<div class="bar-row"><div class="bar-label">${y}</div><div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div><div class="bar-count">${n || ''}</div></div>`;
+  }
+  html += `</div></div>`;
+
+  // entries (escape first, then add highlights)
+  html += `<div class="stats-section"><h3>entries</h3>`;
+  const re = new RegExp('(\\b' + name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b)', 'g');
+  for (const e of matches) {
+    let when = String(e.year);
+    if (e.month) when = `${MN[e.month]} ${e.year}`;
+    if (e.month && e.day) when = `${MN[e.month]} ${e.day}, ${e.year}`;
+    if (e.hour != null) when += ` · ${pad2(e.hour)}:${pad2(e.minute)}`;
+    const escaped = escHtml(String(e.text || ''));
+    const highlighted = escaped.replace(re, '<mark class="who">$1</mark>');
+    html += `<div class="person-entry"><div class="when">${escHtml(when)} · age ${e.year - BIRTH}</div><div class="body">${highlighted}</div></div>`;
+  }
+  html += `</div>`;
+
+  document.getElementById('personContent').innerHTML = html;
+  show('person');
+  window.scrollTo(0, 0);
+}
+
+// ── incoming interview ──
+let iiState = { items: [], idx: 0, processed: 0, skippedSet: new Set() };
+
+function openIncomingIV() {
+  iiState.items = getIncomingItems(S.text);
+  iiState.idx = 0;
+  iiState.processed = 0;
+  iiState.skippedSet = new Set();
+  if (iiState.items.length === 0) {
+    toast('No incoming items to process');
+    return;
+  }
+  advanceIncomingIV();
+  show('incoming-iv');
+}
+
+function advanceIncomingIV() {
+  // skip already-processed or skipped items
+  // Re-fetch items in case we modified the text
+  iiState.items = getIncomingItems(S.text);
+  // Find next unskipped item
+  const next = iiState.items.find(it => !iiState.skippedSet.has(it));
+  if (!next) {
+    toast(iiState.processed + ' incoming items processed');
+    overview();
+    return;
+  }
+  renderIncomingIV(next);
+}
+
+function renderIncomingIV(item) {
+  document.getElementById('iiText').textContent = item;
+  // Reset date fields
+  ['iiYr', 'iiMo', 'iiDy', 'iiTm', 'iiExpanded'].forEach(id => document.getElementById(id).value = '');
+  // Track the current item
+  iiState.currentItem = item;
+  // Progress
+  const total = iiState.items.length + iiState.processed;
+  document.getElementById('iiLabel').textContent = `Item ${iiState.processed + 1}/${total}`;
+  const pct = total > 0 ? (iiState.processed / total) * 100 : 0;
+  document.getElementById('iiFill').style.width = pct + '%';
+  document.getElementById('iiProcessed').textContent = iiState.processed + ' processed';
+  updateIncomingPreview();
+  document.getElementById('iiYr').focus();
+  const c = document.getElementById('iiCard');
+  c.classList.remove('fade'); void c.offsetWidth; c.classList.add('fade');
+}
+
+function updateIncomingPreview() {
+  const yr = +document.getElementById('iiYr').value || null;
+  const mo = +document.getElementById('iiMo').value || null;
+  const dy = +document.getElementById('iiDy').value || null;
+  const tm = document.getElementById('iiTm').value;
+  let hr = null, mi = null;
+  if (tm) { const p = tm.split(':'); hr = +p[0]; mi = +p[1]; }
+  const expanded = document.getElementById('iiExpanded').value || iiState.currentItem || '...';
+  const el = document.getElementById('iiPrev');
+  if (!yr) { el.textContent = 'enter a year to see preview'; return; }
+  const formatted = formatPastEntry(yr, mo, dy, hr, mi, expanded);
+  el.innerHTML = 'will save as: <span class="fmt">' + escHtml(formatted) + '</span>';
+}
+
+function saveIncomingIV() {
+  const yr = +document.getElementById('iiYr').value || null;
+  if (!yr) { toast('Year is required'); return; }
+  const mo = +document.getElementById('iiMo').value || null;
+  const dy = +document.getElementById('iiDy').value || null;
+  const tm = document.getElementById('iiTm').value;
+  let hr = null, mi = null;
+  if (tm) { const p = tm.split(':'); hr = +p[0]; mi = +p[1]; }
+  const expanded = document.getElementById('iiExpanded').value.trim() || iiState.currentItem;
+
+  // Atomic-ish: build candidate text, guard, commit
+  const afterRemove = removeIncomingLine(S.text, iiState.currentItem);
+  if (afterRemove === S.text) {
+    showIntegrityWarning('Could not find "' + iiState.currentItem + '" in INCOMING section. Aborted.');
+    return;
+  }
+  const candidate = insertDatedEntry(afterRemove, yr, mo, dy, hr, mi, expanded);
+  if (!commitText(candidate, 1, 'Process incoming')) return;
+  S.sessionYears.add(yr);
+  iiState.processed++;
+  refresh();
+  advanceIncomingIV();
+}
+
+function skipIncomingIV() {
+  iiState.skippedSet.add(iiState.currentItem);
+  advanceIncomingIV();
+}
+
+// ── interview ──
+// Pick the next interview target. Two modes:
+//   1. "discover" — fill an uncovered gap year (priority)
+//   2. "deepen"   — pick a covered year with few entries (fallback, never runs out)
+// Returns true if a target was set (S.yr + S.mode updated), false only if the file has zero entries.
+function pickNextTarget() {
+  const covYrs = new Set(S.entries.map(e => e.year));
+
+  // 1. Uncovered gap years
+  if (S.gaps && S.gaps.length > 0) {
+    for (let i = 0; i < S.gaps.length; i++) {
+      const gap = S.gaps[i];
+      for (let y = gap.s; y <= gap.e; y++) {
+        if (!covYrs.has(y) && !S.skipped.has(y)) {
+          S.gi = i;
+          S.yr = y;
+          S.mode = 'discover';
+          return true;
+        }
+      }
+    }
+  }
+
+  // 2. Deepen: pick any year that has entries, weighted inversely by entry count.
+  //    Sparse years get picked more often, but dense years are still possible.
+  //    Years skipped this session are excluded.
+  const byYear = {};
+  for (const e of S.entries) {
+    if (!e.year) continue;
+    if (S.skipped.has(e.year)) continue;
+    byYear[e.year] = (byYear[e.year] || 0) + 1;
+  }
+  const years = Object.keys(byYear).map(Number);
+  if (years.length === 0) return false;
+
+  const weights = years.map(y => 1 / byYear[y]);
+  const total = weights.reduce((a, b) => a + b, 0);
+  let r = Math.random() * total;
+  for (let i = 0; i < years.length; i++) {
+    r -= weights[i];
+    if (r <= 0) {
+      S.yr = years[i];
+      S.mode = 'deepen';
+      return true;
+    }
+  }
+  S.yr = years[years.length - 1];
+  S.mode = 'deepen';
+  return true;
+}
+
+// Render the live interview question into the home-top area.
+// Called by overview() on full render, and by saveHomeAns/skipHomeYear/rerollHomeQ after advancing.
+function renderHomeInterview(newQuestion) {
+  const hi = document.getElementById('homeInterview');
+  const done = document.getElementById('homeDone');
+  if (!pickNextTarget()) {
+    // Only reachable when there are literally zero entries in the file.
+    hi.style.display = 'none';
+    done.style.display = 'flex';
+    return;
+  }
+  hi.style.display = '';
+  done.style.display = 'none';
+
+  const year = S.yr;
+  const age = year - BIRTH;
+  const mode = S.mode || 'discover';
+  document.getElementById('hiMeta').textContent = `${mode} · ${year} · you at age ${age}`;
+
+  if (newQuestion !== false) {
+    document.getElementById('hiQuestion').textContent = getQ(year);
+    const c = document.getElementById('hiCard');
+    c.classList.remove('fade'); void c.offsetWidth; c.classList.add('fade');
+  }
+
+  document.getElementById('hiAnswer').value = '';
+  ['hiMo', 'hiDy', 'hiTm'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  const spec = document.getElementById('hiSpec');
+  if (spec) spec.open = false;
+}
+
+// Save the answer from the home interview textarea and advance to the next question.
+function saveHomeAns() {
+  const txt = document.getElementById('hiAnswer').value.trim();
+  if (!txt) return;
+  const mo = +document.getElementById('hiMo').value || null;
+  const dy = +document.getElementById('hiDy').value || null;
+  const tm = document.getElementById('hiTm').value;
+  let hr = null, mi = null;
+  if (tm) { const p = tm.split(':'); hr = +p[0]; mi = +p[1]; }
+  const candidate = insertDatedEntry(S.text, S.yr, mo, dy, hr, mi, txt);
+  if (!commitText(candidate, 1, 'Interview answer')) return;
+  S.sessionYears.add(S.yr);
+  S.ivCount++;
+  refresh();
+  // Re-render the overview below-the-fold content (stats, timeline, gaps)
+  // and pick the next question above the fold.
+  updateBelowFold();
+  renderHomeInterview(true);
+}
+
+function skipHomeYear() {
+  S.skipped.add(S.yr);
+  renderHomeInterview(true);
+}
+
+function rerollHomeQ() {
+  renderHomeInterview(true);
+}
+
+// ── file loading ──
+const loader = document.getElementById('loader');
+const fileIn = document.getElementById('fileIn');
+loader.addEventListener('click', () => fileIn.click());
+loader.addEventListener('dragover', e => { e.preventDefault(); loader.classList.add('dragover'); });
+loader.addEventListener('dragleave', () => loader.classList.remove('dragover'));
+loader.addEventListener('drop', e => {
+  e.preventDefault(); loader.classList.remove('dragover');
+  if (e.dataTransfer.files.length) loadFile(e.dataTransfer.files[0]);
+});
+fileIn.addEventListener('change', () => { if (fileIn.files.length) loadFile(fileIn.files[0]); });
+
+function loadFile(f) {
+  const r = new FileReader();
+  r.onload = e => {
+    S.text = e.target.result;
+    S.entries = parse(S.text);
+    S.origYears = new Set(S.entries.map(e => e.year));
+    S.sessionYears = new Set();
+    S.gaps = findGaps(S.entries);
+    S.ivCount = 0;
+    S.skipped = new Set();
+    usedQ.clear();
+    saveText();
+    // reset last-known count since user explicitly loaded a file
+    try { localStorage.setItem(COUNT_KEY, String(S.entries.length)); } catch (e) {}
+    hideIntegrityWarning();
+    overview();
+  };
+  r.readAsText(f);
+}
+
+// ── event listeners ──
+document.getElementById('exportBtn').addEventListener('click', () => { download(); toast('Downloaded'); });
+document.getElementById('quickSave').addEventListener('click', quickSave);
+document.getElementById('quickArea').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) quickSave();
+});
+
+// home interview (inline on overview)
+document.getElementById('hiSave').addEventListener('click', saveHomeAns);
+document.getElementById('hiReroll').addEventListener('click', rerollHomeQ);
+document.getElementById('hiSkip').addEventListener('click', skipHomeYear);
+document.getElementById('hiAnswer').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) saveHomeAns();
+});
+
+// load different file (clears storage and shows loader)
+document.getElementById('loadDiffBtn').addEventListener('click', () => {
+  fileIn.click();
+});
+
+// viewer
+document.getElementById('browseBtn').addEventListener('click', openViewer);
+document.getElementById('viewerBack').addEventListener('click', overview);
+document.getElementById('viewerSearch').addEventListener('input', e => renderViewer(e.target.value));
+
+// stats
+document.getElementById('statsBtn').addEventListener('click', openStats);
+document.getElementById('statsBack').addEventListener('click', overview);
+
+// photos
+document.getElementById('photosBtn').addEventListener('click', openPhotos);
+document.getElementById('photosBack').addEventListener('click', photosBack);
+
+// person profile (event delegation on stats container)
+document.getElementById('statsContent').addEventListener('click', e => {
+  const chip = e.target.closest('.person-chip');
+  if (chip && chip.dataset.person) openPerson(chip.dataset.person);
+});
+document.getElementById('personBack').addEventListener('click', openStats);
+
+// incoming interview
+document.getElementById('incomingIvBtn').addEventListener('click', openIncomingIV);
+document.getElementById('iiSave').addEventListener('click', saveIncomingIV);
+document.getElementById('iiSkip').addEventListener('click', skipIncomingIV);
+document.getElementById('iiDone').addEventListener('click', overview);
+['iiYr','iiMo','iiDy','iiTm','iiExpanded'].forEach(id => {
+  document.getElementById(id).addEventListener('input', updateIncomingPreview);
+});
+document.getElementById('iiExpanded').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) saveIncomingIV();
+});
+
+// integrity warning
+document.getElementById('integrityDownload').addEventListener('click', () => {
+  download();
+  toast('Downloaded — keep this backup safe');
+});
+document.getElementById('integrityDismiss').addEventListener('click', hideIntegrityWarning);
+
+// on this day refresh (cycles a new random memory)
+document.getElementById('otdRefresh').addEventListener('click', renderOnThisDay);
+
+// secondary forms (past memory, incoming)
+function closeSecondaryForms() {
+  document.getElementById('pastForm').style.display = 'none';
+  document.getElementById('incomingForm').style.display = 'none';
+  document.querySelector('.secondary-btns').style.display = '';
+}
+
+// incoming memory
+document.getElementById('incomingShow').addEventListener('click', () => {
+  document.querySelector('.secondary-btns').style.display = 'none';
+  document.getElementById('incomingForm').style.display = 'block';
+  document.getElementById('incomingTxt').focus();
+});
+document.getElementById('incomingCancel').addEventListener('click', () => {
+  document.getElementById('incomingTxt').value = '';
+  closeSecondaryForms();
+});
+document.getElementById('incomingSave').addEventListener('click', incomingSaveFn);
+document.getElementById('incomingTxt').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) incomingSaveFn();
+});
+
+// past memory
+document.getElementById('pastShow').addEventListener('click', () => {
+  document.querySelector('.secondary-btns').style.display = 'none';
+  document.getElementById('pastForm').style.display = 'block';
+  document.getElementById('pastYr').focus();
+});
+document.getElementById('pastCancel').addEventListener('click', () => {
+  resetPastForm();
+  closeSecondaryForms();
+});
+document.getElementById('pastSave').addEventListener('click', pastSave);
+['pastYr','pastMo','pastDy','pastTm','pastTxt'].forEach(id => {
+  document.getElementById(id).addEventListener('input', updatePreview);
+});
+
+// ── init: try to restore from localStorage ──
+loadFromStorage();
+</script>
+</body>
+</html>

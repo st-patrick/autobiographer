@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Autobiographer — Endless Chapters</title>
+<script type="application/json" id="design-meta">
+{
+  "id": "024-endless-chapters",
+  "title": "Endless Chapters",
+  "subtitle": "Center scrolls endlessly, left chapters filter the browse, no viewport lock",
+  "category": "journal-app",
+  "tags": ["three-column", "chapters", "browse", "endless-scroll", "filter", "serif"],
+  "style": "endless-chapters",
+  "palette": ["#faf9f5", "#1a1918", "#a66900"],
+  "theme": "light",
+  "parents": ["023-browse-center", "020-people-sidebar"],
+  "mergedFrom": [],
+  "created": "2026-04-12"
+}
+</script>
+<style>
+  :root {
+    --bg: #faf9f5; --surface: #fdfcf8; --surface2: #f2efe4;
+    --border: #d8d3c4; --border-strong: #b5ae9c;
+    --text: #1a1918; --dim: #6f6a60; --faint: #9a9587; --accent: #a66900;
+    --highlight: #f5e6a3;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Hoefler Text', 'Libre Baskerville', Georgia, serif;
+    background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.55;
+    -webkit-font-smoothing: antialiased; font-feature-settings: "kern" 1, "liga" 1;
+    font-variant-numeric: oldstyle-nums;
+    height: 100vh; overflow: hidden;
+  }
+
+  .layout {
+    max-width: 1280px; margin: 0 auto;
+    display: grid; grid-template-columns: 80px 1fr 280px; height: 100vh;
+  }
+
+  /* ── Left: chapter spine ── */
+  .chapters {
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; padding: 0;
+    position: sticky; top: 0; height: 100vh;
+  }
+  .chapter {
+    flex: 1;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer; transition: background 0.15s;
+    position: relative; padding: 0.3rem 0.2rem; min-height: 0;
+  }
+  .chapter:last-child { border-bottom: none; }
+  .chapter:hover { background: var(--surface2); }
+  .chapter.active { background: var(--surface2); }
+  .chapter.active::before {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--accent);
+  }
+  .chapter .label {
+    writing-mode: vertical-lr; text-orientation: mixed;
+    font-size: 0.52rem; font-style: italic; letter-spacing: 0.06em;
+    color: var(--faint); text-transform: lowercase;
+  }
+  .chapter.active .label { color: var(--accent); }
+  .chapter .yrs {
+    writing-mode: vertical-lr; text-orientation: mixed;
+    font-size: 0.44rem; color: var(--faint);
+    font-variant-numeric: oldstyle-nums tabular-nums; margin-top: 0.2rem;
+  }
+  .chapter .dots {
+    display: flex; flex-direction: column; gap: 1px; margin-top: 0.3rem; align-items: center;
+  }
+  .chapter .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border-strong); }
+  .chapter.active .dot { background: var(--accent); }
+  .chapter .dot.empty { background: transparent; border: 1px solid var(--border); }
+  .chapter .dot.dense { width: 8px; height: 8px; background: var(--text); }
+  .chapter.active .dot.dense { background: var(--accent); }
+
+  /* "all" tab at very top of spine */
+  .chapter-all {
+    padding: 0.5rem 0.2rem; text-align: center;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer; transition: background 0.15s;
+    position: relative; min-height: 28px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .chapter-all:hover { background: var(--surface2); }
+  .chapter-all.active { background: var(--surface2); }
+  .chapter-all.active::before {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--accent);
+  }
+  .chapter-all .label {
+    font-size: 0.5rem; font-style: italic; letter-spacing: 0.06em;
+    color: var(--faint); text-transform: lowercase;
+  }
+  .chapter-all.active .label { color: var(--accent); }
+
+  /* ── Center: endless scroll ── */
+  .center { overflow-y: auto; }
+  .center-inner { padding: 2rem 2.5rem 4rem; }
+
+  .header-row { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 0.1rem; }
+  h1 { font-size: 1.7rem; font-weight: 400; letter-spacing: -0.01em; line-height: 1.1; }
+  .header-date { font-size: 0.65rem; color: var(--dim); font-style: italic; }
+  .sub { color: var(--dim); font-size: 0.75rem; font-style: italic; margin-bottom: 1.5rem; }
+
+  .section-label { font-size: 0.6rem; font-style: italic; letter-spacing: 0.08em; color: var(--dim); text-transform: lowercase; margin-bottom: 0.4rem; }
+
+  .quick-section { margin-bottom: 1.5rem; }
+  .ta-wrap { position: relative; }
+  .ta-wrap textarea {
+    width: 100%; background: var(--surface); border: 1px solid var(--border);
+    color: var(--text); font-family: inherit; font-size: 0.92rem;
+    padding: 0.7rem 2.8rem 0.7rem 0.9rem; resize: none; min-height: 60px; line-height: 1.55;
+  }
+  .ta-wrap textarea:focus { outline: none; border-color: var(--text); }
+  .ta-wrap textarea::placeholder { color: var(--faint); font-style: italic; }
+  .save-btn {
+    position: absolute; bottom: 0.5rem; right: 0.5rem;
+    background: transparent; border: 1px solid var(--border); color: var(--dim);
+    width: 1.8rem; height: 1.8rem; border-radius: 50%; cursor: pointer;
+    font-family: inherit; font-size: 0.8rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .save-btn:hover { border-color: var(--text); color: var(--text); }
+
+  .interview { padding-top: 1.2rem; border-top: 1px solid var(--border); margin-bottom: 1.5rem; }
+  .interview-meta { font-size: 0.68rem; color: var(--dim); font-style: italic; margin-bottom: 0.5rem; }
+  .question { font-size: 1.1rem; line-height: 1.45; font-style: italic; margin-bottom: 0.8rem; max-width: 540px; }
+  .interview .ta-wrap textarea { min-height: 72px; }
+  .iv-actions { display: flex; gap: 0.8rem; margin-top: 0.5rem; font-size: 0.72rem; color: var(--dim); font-style: italic; }
+  .iv-actions a { color: var(--dim); cursor: pointer; text-decoration: none; border-bottom: 1px dotted var(--border); }
+  .iv-actions a:hover { color: var(--text); }
+
+  /* ── Browse ── */
+  .browse { border-top: 1px solid var(--border); padding-top: 1rem; }
+  .browse-bar {
+    display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;
+    position: sticky; top: 0; background: var(--bg); padding: 0.4rem 0; z-index: 5;
+    border-bottom: 1px solid var(--border);
+  }
+  .browse-search {
+    background: var(--surface); border: 1px solid var(--border);
+    padding: 0.35rem 0.6rem; color: var(--text); font-family: inherit;
+    font-size: 0.78rem; font-style: italic; flex: 1; min-width: 100px;
+  }
+  .browse-search:focus { outline: none; border-color: var(--text); }
+  .filter-label {
+    font-size: 0.6rem; color: var(--accent); font-style: italic;
+    background: var(--surface2); padding: 0.2rem 0.5rem;
+    white-space: nowrap;
+  }
+
+  .browse-content {
+    font-family: inherit; white-space: pre-wrap; word-wrap: break-word;
+    font-size: 0.88rem; line-height: 1.7; color: var(--text);
+    font-variant-numeric: oldstyle-nums;
+  }
+  .browse-content .yr-h {
+    font-size: 1.3rem; font-weight: 400; font-variant: small-caps;
+    letter-spacing: 0.05em; display: block;
+    margin: 2rem 0 0.6rem; padding-bottom: 0.3rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .browse-content .yr-h:first-child { margin-top: 0; }
+  .browse-content .mo-h {
+    font-size: 0.92rem; font-style: italic; color: var(--dim);
+    margin-top: 1.2rem; display: inline-block;
+  }
+  .browse-content .date {
+    font-size: 0.72rem; color: var(--faint); font-style: italic; margin-right: 0.3em;
+  }
+  .browse-content .pre-h {
+    font-size: 1rem; font-style: italic; color: var(--dim);
+    display: block; margin: 1.5rem 0 0.5rem;
+  }
+
+  /* ── Right sidebar ── */
+  .sidebar { border-left: 1px solid var(--border); padding: 2rem 1.3rem; overflow-y: auto; position: sticky; top: 0; height: 100vh; }
+  .sb-section { margin-bottom: 1.3rem; padding-bottom: 1.1rem; border-bottom: 1px solid var(--border); }
+  .sb-section:last-child { border-bottom: none; }
+  .sb-title { font-size: 0.56rem; font-style: italic; letter-spacing: 0.08em; color: var(--dim); text-transform: lowercase; margin-bottom: 0.4rem; }
+
+  .otd-quote { border-left: 2px solid var(--accent); padding-left: 0.7rem; font-size: 0.8rem; line-height: 1.5; font-style: italic; }
+  .otd-meta { font-size: 0.6rem; color: var(--dim); margin-top: 0.3rem; padding-left: 0.7rem; font-style: italic; }
+
+  .people-list { display: flex; flex-direction: column; }
+  .person-item {
+    padding: 0.35rem 0; border-bottom: 1px solid var(--border);
+    display: flex; align-items: baseline; justify-content: space-between;
+    cursor: pointer; transition: background 0.15s;
+  }
+  .person-item:last-child { border-bottom: none; }
+  .person-item:hover { background: var(--surface2); margin: 0 -0.3rem; padding-left: 0.3rem; padding-right: 0.3rem; }
+  .person-name { font-size: 0.82rem; color: var(--text); }
+  .person-count { font-size: 0.62rem; color: var(--faint); font-style: italic; font-variant-numeric: oldstyle-nums tabular-nums; }
+
+  .gap-item { padding: 0.25rem 0; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; font-size: 0.75rem; }
+  .gap-item:last-child { border-bottom: none; }
+  .gap-yrs { font-variant-numeric: oldstyle-nums; }
+  .gap-dur { color: var(--dim); font-style: italic; font-size: 0.65rem; }
+
+  .tools-col { display: flex; flex-direction: column; gap: 0.25rem; }
+  .btn { background: transparent; color: var(--dim); border: 1px solid var(--border); padding: 0.35rem 0.5rem; font-family: inherit; font-size: 0.68rem; cursor: pointer; text-align: left; transition: all 0.15s; }
+  .btn:hover { border-color: var(--text); color: var(--text); }
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- Left: chapter spine + "all" tab -->
+  <div class="chapters">
+    <div class="chapter-all" data-filter="all"><span class="label">all</span></div>
+    <div class="chapter" data-filter="baby">
+      <span class="label">baby</span><span class="yrs">'91–'96</span>
+      <div class="dots"><span class="dot empty"></span><span class="dot empty"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+    </div>
+    <div class="chapter" data-filter="kid">
+      <span class="label">kid</span><span class="yrs">'97–'03</span>
+      <div class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+    </div>
+    <div class="chapter active" data-filter="teen">
+      <span class="label">teen</span><span class="yrs">'04–'09</span>
+      <div class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+    </div>
+    <div class="chapter" data-filter="young">
+      <span class="label">young</span><span class="yrs">'10–'16</span>
+      <div class="dots"><span class="dot"></span><span class="dot empty"></span><span class="dot"></span><span class="dot empty"></span><span class="dot"></span><span class="dot empty"></span><span class="dot empty"></span></div>
+    </div>
+    <div class="chapter" data-filter="adult">
+      <span class="label">adult</span><span class="yrs">'17–now</span>
+      <div class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot dense"></span><span class="dot dense"></span><span class="dot dense"></span><span class="dot dense"></span></div>
+    </div>
+  </div>
+
+  <!-- Center: endless scroll -->
+  <div class="center">
+    <div class="center-inner">
+      <div class="header-row">
+        <h1>Autobiographer</h1>
+        <span class="header-date">April 12, 2026</span>
+      </div>
+      <div class="sub">197 entries · your life, one entry at a time</div>
+
+      <div class="quick-section">
+        <div class="section-label">right now</div>
+        <div class="ta-wrap">
+          <textarea placeholder="what's happening..."></textarea>
+          <button class="save-btn" title="save">↵</button>
+        </div>
+      </div>
+
+      <div class="interview">
+        <div class="interview-meta">2008 · age 17 · teen · 4 answered</div>
+        <div class="question">It's 2008. What song is stuck in your head on repeat?</div>
+        <div class="ta-wrap">
+          <textarea placeholder="…"></textarea>
+          <button class="save-btn" title="save & next">↵</button>
+        </div>
+        <div class="iv-actions">
+          <a>different question</a><span style="color:var(--faint)">·</span>
+          <a>skip year</a><span style="color:var(--faint)">·</span><a>+ month/day</a>
+        </div>
+      </div>
+
+      <div class="browse" id="browse">
+        <div class="browse-bar">
+          <input class="browse-search" type="search" placeholder="search entries...">
+          <span class="filter-label" id="filterLabel">showing: all</span>
+        </div>
+
+        <div class="browse-content" id="browseContent"><span class="yr-h">2026</span>
+<span class="mo-h">April '26</span>
+<span class="date">101721:</span> feeling so alive... just kicked on some shrooms and then Jamiroquai nostalgia from scrubs inspired... sooo good, cleaning up at the same time, weekend vibes haha love it
+<span class="date">071453:</span> feeling all the complicated feelings of therapy at the low cost of this app haha
+<span class="date">050127:</span> visions of real life being brighter and more colorful and tangible than any perfect tv show
+
+<span class="mo-h">March '26</span>
+<span class="date">282238:</span> I am so grateful… for burger king, vapes, lexi, being able to afford it all … tosca, nice interior design, feeling at home
+<span class="date">191647:</span> what?! both nano revive pix AND style my space have a new customer in 24h. must be spring time :)
+<span class="date">142035:</span> getting a little more than I bargained for with the shrooms hitting VERY well
+<span class="date">102005:</span> remembering how to just close my eyes and let my imagination go
+<span class="date">042120:</span> feeling alive: hardly sleeping and just being inspired for every aspect of every work
+<span class="date">021321:</span> feeling alive in the morning routine with playing, caffeine and the occasional appaday
+
+<span class="mo-h">February '26</span>
+<span class="date">261125:</span> feel alive just closing the laptop right after daily and playing Polytopia with my coffee in my comfy bed
+<span class="date">251740:</span> when I felt alive today: just playing Polytopia right after first meeting. new vape. sun shining
+<span class="date">250123:</span> feeling despair, like I need to move on SO urgently. Like the TIME IS NOW
+<span class="date">240127:</span> feeling kind of stuck. not making much progress in either job OR side projects
+<span class="date">211548:</span> libido is through the roof. I think it is the interior design.
+<span class="date">171641:</span> I do feel like I tapped into a natural oil reserve of power recently
+<span class="date">110153:</span> journal: today I'm still lowkey mad at Alexandra for being such a biatch
+<span class="date">061528:</span> so fucking annoying to deal w Alexandra's newfound attitude
+<span class="date">041446:</span> today's change: word harder, smarter and always up, never Zweitjob
+<span class="date">031426:</span> today's area of change is doing what I ought to do. my dream is still LA
+
+<span class="mo-h">January '26</span>
+<span class="date">292329:</span> the last time I was this scared was I think during math studies? And what's my advice to younger me? find a better university. this one is too dumb and insensitive for you
+<span class="date">292040:</span> love working in Wintergarten all the way up close to the window
+<span class="date">291601:</span> could very well be that this more persistent fear has been re-awakened by my brother hitting me
+<span class="date">281600:</span> vision and dreams: LA, Cali, hot and soft wife and our own family
+<span class="date">280411:</span> today was so great, playing my tron multiplayer w cousins and just having a blast doing it :)
+<span class="date">270059:</span> wondering what's up w Alexandra. If she wants to be serious or not
+<span class="date">212324:</span> Got my first sale on style-my-space so that's cool
+<span class="date">212103:</span> honestly I can't believe I'm telling a computer in natural language what I want and am actually getting pretty much exactly that
+<span class="date">170915:</span> looking for nooooothin, but a good time. Yeah, last night exit game n watched the art of self defense
+<span class="date">150000:</span> Yoake dinner w Alexandra, both of us still kinda sick, then her in lingerie on the couch
+<span class="date">112251:</span> had a dream last night where I "accidentally" put in a much higher trade in trade republic
+<span class="date">092312:</span> the red wine tastes so fucking good right now
+<span class="date">092251:</span> a lot of my work makes me realize again how useless and dumb the internet is most of the time
+<span class="date">091516:</span> feeling slow and foggy and unmotivated. Like my mind is stuck inside jelly
+<span class="date">071813:</span> my skin looking radiant as ever. Must be the smoke stop or whatnot
+
+<span class="yr-h">2025</span>
+<span class="mo-h">November '25</span>
+<span class="date">131951:</span> feeling soo good today but also last night already. That serotonin type high in the evening like shrooms but without
+
+<span class="mo-h">October '25</span>
+<span class="date">152302:</span> working on lamy w AI… this IS my inspirator
+<span class="date">140958:</span> I love this life. Dancing and cartoons with eggs n caffeine in the morning
+<span class="date">132222:</span> it is such a pleasure to work with the tower PC
+<span class="date">091042:</span> today is the perfect day for wintergarten office
+
+<span class="mo-h">September '25</span>
+<span class="date">300026:</span> feeling tired and just a tiny bit lost because I got that afterglow
+<span class="date">260109:</span> the day started with a great sabrina carpenter dream
+<span class="date">240116:</span> addicted to building prototypes. Can't talk anymore. Must sleep now
+<span class="date">230015:</span> it was a good day. My inventorness is making me feel very happy and fulfilled
+<span class="date">190019:</span> what a day. I've been getting up very early which is great
+<span class="date">070526:</span> watched terrified and heretic with Kevin
+<span class="date">040321:</span> Tuesday, Chiara came by to bring back Activity
+
+<span class="mo-h">August '25</span>
+<span class="date">310322:</span> what felt meaningful today? the morning build and playing Unrailed 2 w Torsten
+<span class="date">280118:</span> what felt meaningful today? Getting love from reddit for thinks
+<span class="date">271447:</span> here I am sitting, after getting a call from talent manager
+<span class="date">270145:</span> dear diary… today was same as ever. But not at all.
+<span class="date">191814:</span> I'm starting to think that green tea is the solution to all of my problems
+<span class="date">131925:</span> exhibiting all the low orexin symptoms again
+
+<span class="mo-h">July '25</span>
+<span class="date">311257:</span> nervous, cornered, hungry, attentive, awake, smart
+<span class="date">291633:</span> motivated, rested, romantically fatigued, curious
+<span class="date">232338:</span> low stimulants is feeling fresh, like after working out
+<span class="date">182235:</span> dream journal: had this beautiful non-nightmare last night
+<span class="date">161321:</span> Had the best time in Berlin with love parade
+
+<span class="mo-h">June '25</span>
+<span class="date">251733:</span> counterthought: I am scared that nothing will really work out anymore
+<span class="date">211415:</span> took 30mcg LSD … looking like a newborn baby in my face today
+<span class="date">121100:</span> took some slightly large amount of shroom caps yesterday
+<span class="date">100042:</span> poem: hello and welcome to hell / the mushrooms got me going so well
+<span class="date">071535:</span> after taking a slightly larger shroom stem yesterday, today my eyes have a magical quality
+
+<span class="mo-h">May '25</span>
+<span class="date">…</span>
+
+<span class="pre-h">pre 2025</span>
+2019 ish: I still live in Leipziger Str. 46 in Berlin ... I spend most of the time at work or there
+2022 ish: Curb Your Enthusiasm .. Modern Family. Supernatural
+2017 ish: I went to LA the first time :)) oh my god that was almost ten years ago. It was the best day ever
+2010 ish: I finally finished my fuckin Zivildienst. I hated it every day
+2007 ish: American Pie. Playstation, Gamecube. Programming and learning JavaScript on the drive to Romania
+2003 ish: keep programming, don't worry about girls, worry about business
+1997 ish: my mom crying, hugging me, I feel used but also useful
+1994 ish: My brother teaches me to read so that we can show off to his friends
+1993 ish: I see a crib made out of bright wood. I see my mom reaching out to me</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right sidebar -->
+  <div class="sidebar">
+    <div class="sb-section">
+      <div class="sb-title">on this day — april 12</div>
+      <div class="otd-quote">feeling so alive... just kicked on some shrooms and then Jamiroquai nostalgia from scrubs inspired</div>
+      <div class="otd-meta">2026 · earlier today</div>
+    </div>
+    <div class="sb-section">
+      <div class="sb-title">people in your story</div>
+      <div class="people-list">
+        <div class="person-item"><span class="person-name">Alexandra</span><span class="person-count">12</span></div>
+        <div class="person-item"><span class="person-name">Torsten</span><span class="person-count">8</span></div>
+        <div class="person-item"><span class="person-name">Vanessa</span><span class="person-count">6</span></div>
+        <div class="person-item"><span class="person-name">Kev</span><span class="person-count">4</span></div>
+        <div class="person-item"><span class="person-name">Chiara</span><span class="person-count">3</span></div>
+      </div>
+    </div>
+    <div class="sb-section">
+      <div class="sb-title">blind spots</div>
+      <div class="gap-item"><span class="gap-yrs">1991–1992</span><span class="gap-dur">2 yrs</span></div>
+      <div class="gap-item"><span class="gap-yrs">2011</span><span class="gap-dur">1 yr</span></div>
+      <div class="gap-item"><span class="gap-yrs">2015–2016</span><span class="gap-dur">2 yrs</span></div>
+      <div class="gap-item"><span class="gap-yrs">2013</span><span class="gap-dur">1 yr</span></div>
+    </div>
+    <div class="sb-section">
+      <div class="sb-title">tools</div>
+      <div class="tools-col">
+        <button class="btn">Process incoming (8)</button>
+        <button class="btn">Photos</button>
+        <button class="btn">Stats</button>
+        <button class="btn">Download .txt</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// Interactive: clicking chapters filters browse + updates active state
+const chapters = document.querySelectorAll('.chapter, .chapter-all');
+const filterLabel = document.getElementById('filterLabel');
+const ranges = {
+  all: null,
+  baby: [1991, 1996],
+  kid: [1997, 2003],
+  teen: [2004, 2009],
+  young: [2010, 2016],
+  adult: [2017, 2030]
+};
+
+chapters.forEach(ch => {
+  ch.addEventListener('click', () => {
+    // update active
+    chapters.forEach(c => c.classList.remove('active'));
+    ch.classList.add('active');
+
+    const filter = ch.dataset.filter;
+    filterLabel.textContent = filter === 'all' ? 'showing: all' : 'showing: ' + filter;
+
+    // In a real build, this would filter S.entries and re-render.
+    // For the mockup, just scroll to a representative section.
+    const browse = document.getElementById('browseContent');
+    if (filter === 'all') {
+      browse.parentElement.scrollIntoView({ behavior: 'smooth' });
+    }
+  });
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Autobiographer — Split Textareas</title>
+<script type="application/json" id="design-meta">
+{
+  "id": "022-split-textareas",
+  "title": "Split Textareas",
+  "subtitle": "Quick entry and interview side by side, OTD as full-width pull-quote below",
+  "category": "journal-app",
+  "tags": ["three-column", "chapters", "split", "side-by-side", "serif"],
+  "style": "split-textareas",
+  "palette": ["#faf9f5", "#1a1918", "#a66900"],
+  "theme": "light",
+  "parents": ["011-chapters"],
+  "mergedFrom": [],
+  "created": "2026-04-12"
+}
+</script>
+<style>
+  :root {
+    --bg: #faf9f5; --surface: #fdfcf8; --surface2: #f2efe4;
+    --border: #d8d3c4; --border-strong: #b5ae9c;
+    --text: #1a1918; --dim: #6f6a60; --faint: #9a9587; --accent: #a66900;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; }
+  body {
+    font-family: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Hoefler Text', 'Libre Baskerville', Georgia, serif;
+    background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.55;
+    -webkit-font-smoothing: antialiased; font-feature-settings: "kern" 1, "liga" 1;
+    font-variant-numeric: oldstyle-nums;
+  }
+
+  .layout {
+    max-width: 1280px; margin: 0 auto;
+    display: grid; grid-template-columns: 80px 1fr 220px; height: 100vh;
+  }
+
+  /* ── Left: chapter spine ── */
+  .chapters {
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; padding: 0;
+  }
+  .chapter {
+    flex: 1;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer; transition: background 0.15s;
+    position: relative; padding: 0.3rem 0.2rem;
+    min-height: 0;
+  }
+  .chapter:last-child { border-bottom: none; }
+  .chapter:hover { background: var(--surface2); }
+  .chapter.active { background: var(--surface2); }
+  .chapter.active::before {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--accent);
+  }
+  .chapter .label {
+    writing-mode: vertical-lr; text-orientation: mixed;
+    font-size: 0.52rem; font-style: italic; letter-spacing: 0.06em;
+    color: var(--faint); text-transform: lowercase;
+  }
+  .chapter.active .label { color: var(--accent); }
+  .chapter .yrs {
+    writing-mode: vertical-lr; text-orientation: mixed;
+    font-size: 0.44rem; color: var(--faint);
+    font-variant-numeric: oldstyle-nums tabular-nums;
+    margin-top: 0.2rem;
+  }
+  .chapter .dots {
+    display: flex; flex-direction: column; gap: 1px; margin-top: 0.3rem; align-items: center;
+  }
+  .chapter .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--border-strong);
+  }
+  .chapter.active .dot { background: var(--accent); }
+  .chapter .dot.empty { background: transparent; border: 1px solid var(--border); }
+  .chapter .dot.dense { width: 8px; height: 8px; background: var(--text); }
+  .chapter.active .dot.dense { background: var(--accent); }
+
+  /* ── Center ── */
+  .center { padding: 2.2rem 2.5rem; overflow-y: auto; }
+  .header-row { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 0.1rem; }
+  h1 { font-size: 1.8rem; font-weight: 400; letter-spacing: -0.01em; line-height: 1.1; }
+  .header-date { font-size: 0.68rem; color: var(--dim); font-style: italic; }
+  .sub { color: var(--dim); font-size: 0.78rem; font-style: italic; margin-bottom: 2rem; }
+
+  /* ── Split columns ── */
+  .split-row {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;
+    margin-bottom: 2.5rem;
+  }
+  .split-col {}
+
+  .section-label { font-size: 0.62rem; font-style: italic; letter-spacing: 0.08em; color: var(--dim); text-transform: lowercase; margin-bottom: 0.5rem; }
+  .ta-wrap { position: relative; }
+  .ta-wrap textarea {
+    width: 100%; background: var(--surface); border: 1px solid var(--border);
+    color: var(--text); font-family: inherit; font-size: 0.9rem;
+    padding: 0.8rem 2.8rem 0.8rem 0.9rem; resize: none; min-height: 180px; line-height: 1.6;
+  }
+  .ta-wrap textarea:focus { outline: none; border-color: var(--text); }
+  .ta-wrap textarea::placeholder { color: var(--faint); font-style: italic; }
+  .save-btn {
+    position: absolute; bottom: 0.5rem; right: 0.5rem;
+    background: transparent; border: 1px solid var(--border); color: var(--dim);
+    width: 1.8rem; height: 1.8rem; border-radius: 50%; cursor: pointer;
+    font-family: inherit; font-size: 0.8rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .save-btn:hover { border-color: var(--text); color: var(--text); }
+
+  .interview-meta { font-size: 0.65rem; color: var(--dim); font-style: italic; margin-bottom: 0.6rem; }
+  .question { font-size: 1rem; line-height: 1.4; font-style: italic; margin-bottom: 0.8rem; }
+  .iv-actions { display: flex; gap: 0.6rem; margin-top: 0.6rem; font-size: 0.7rem; color: var(--dim); font-style: italic; flex-wrap: wrap; }
+  .iv-actions a { color: var(--dim); cursor: pointer; text-decoration: none; border-bottom: 1px dotted var(--border); }
+  .iv-actions a:hover { color: var(--text); }
+
+  /* ── OTD full-width pull-quote ── */
+  .otd-full {
+    border-top: 1px solid var(--border); padding-top: 2rem;
+    text-align: center;
+  }
+  .otd-full .otd-label {
+    font-size: 0.58rem; font-style: italic; letter-spacing: 0.08em;
+    color: var(--dim); text-transform: lowercase; margin-bottom: 0.8rem;
+  }
+  .otd-full .otd-text {
+    font-size: 1.1rem; line-height: 1.55; font-style: italic;
+    color: var(--dim); max-width: 540px; margin: 0 auto;
+    border-left: 2px solid var(--accent); padding-left: 1rem; text-align: left;
+  }
+  .otd-full .otd-meta {
+    font-size: 0.62rem; color: var(--faint); margin-top: 0.5rem; font-style: italic;
+  }
+
+  /* ── Right sidebar (slim) ── */
+  .sidebar { border-left: 1px solid var(--border); padding: 2.2rem 1.1rem; overflow-y: auto; }
+  .sb-section { margin-bottom: 1.4rem; padding-bottom: 1.2rem; border-bottom: 1px solid var(--border); }
+  .sb-section:last-child { border-bottom: none; }
+  .sb-title { font-size: 0.58rem; font-style: italic; letter-spacing: 0.08em; color: var(--dim); text-transform: lowercase; margin-bottom: 0.5rem; }
+
+  .gap-item { padding: 0.3rem 0; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; font-size: 0.75rem; }
+  .gap-item:last-child { border-bottom: none; }
+  .gap-yrs { font-variant-numeric: oldstyle-nums; }
+  .gap-dur { color: var(--dim); font-style: italic; font-size: 0.65rem; }
+
+  .tools-col { display: flex; flex-direction: column; gap: 0.3rem; }
+  .btn { background: transparent; color: var(--dim); border: 1px solid var(--border); padding: 0.35rem 0.5rem; font-family: inherit; font-size: 0.65rem; cursor: pointer; text-align: left; transition: all 0.15s; }
+  .btn:hover { border-color: var(--text); color: var(--text); }
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- Left: life chapters -->
+  <div class="chapters">
+    <div class="chapter">
+      <span class="label">baby</span>
+      <span class="yrs">'91–'96</span>
+      <div class="dots">
+        <span class="dot empty"></span><span class="dot empty"></span>
+        <span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+      </div>
+    </div>
+    <div class="chapter">
+      <span class="label">kid</span>
+      <span class="yrs">'97–'03</span>
+      <div class="dots">
+        <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        <span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+      </div>
+    </div>
+    <div class="chapter active">
+      <span class="label">teen</span>
+      <span class="yrs">'04–'09</span>
+      <div class="dots">
+        <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+      </div>
+    </div>
+    <div class="chapter">
+      <span class="label">young</span>
+      <span class="yrs">'10–'16</span>
+      <div class="dots">
+        <span class="dot"></span><span class="dot empty"></span><span class="dot"></span>
+        <span class="dot empty"></span><span class="dot"></span><span class="dot empty"></span><span class="dot empty"></span>
+      </div>
+    </div>
+    <div class="chapter">
+      <span class="label">adult</span>
+      <span class="yrs">'17–now</span>
+      <div class="dots">
+        <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        <span class="dot dense"></span><span class="dot dense"></span>
+        <span class="dot dense"></span><span class="dot dense"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Center -->
+  <div class="center">
+    <div class="header-row">
+      <h1>Autobiographer</h1>
+      <span class="header-date">Saturday, April 12, 2026</span>
+    </div>
+    <div class="sub">your life, one entry at a time</div>
+
+    <div class="split-row">
+      <div class="split-col">
+        <div class="section-label">right now</div>
+        <div class="ta-wrap">
+          <textarea placeholder="what's happening..."></textarea>
+          <button class="save-btn" title="save">↵</button>
+        </div>
+      </div>
+      <div class="split-col">
+        <div class="interview-meta">2008 · age 17 · teen · 4 answered</div>
+        <div class="question">It's 2008. What song is stuck in your head on repeat?</div>
+        <div class="ta-wrap">
+          <textarea placeholder="..."></textarea>
+          <button class="save-btn" title="save & next">↵</button>
+        </div>
+        <div class="iv-actions">
+          <a>different question</a>
+          <span style="color:var(--faint)">·</span>
+          <a>skip year</a>
+          <span style="color:var(--faint)">·</span>
+          <a>+ month/day</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="otd-full">
+      <div class="otd-label">on this day — april 12</div>
+      <div class="otd-text">"feeling so alive... just kicked on some shrooms and then Jamiroquai nostalgia from scrubs inspired"</div>
+      <div class="otd-meta">2026 · earlier today</div>
+    </div>
+  </div>
+
+  <!-- Right sidebar (slim) -->
+  <div class="sidebar">
+    <div class="sb-section">
+      <div class="sb-title">blind spots</div>
+      <div class="gap-item"><span class="gap-yrs">1991–1992</span><span class="gap-dur">2 yrs</span></div>
+      <div class="gap-item"><span class="gap-yrs">2011</span><span class="gap-dur">1 yr</span></div>
+      <div class="gap-item"><span class="gap-yrs">2015–2016</span><span class="gap-dur">2 yrs</span></div>
+      <div class="gap-item"><span class="gap-yrs">2013</span><span class="gap-dur">1 yr</span></div>
+    </div>
+    <div class="sb-section">
+      <div class="sb-title">tools</div>
+      <div class="tools-col">
+        <button class="btn">Process incoming (8)</button>
+        <button class="btn">Photos</button>
+        <button class="btn">Browse</button>
+        <button class="btn">Stats</button>
+        <button class="btn">Download .txt</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

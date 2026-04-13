@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Autobiographer — Tabbed Center</title>
+<script type="application/json" id="design-meta">
+{"id":"049-midnight","title":"Midnight","subtitle":"Center pane has write/read/random tabs","category":"journal-app","tags":["three-column","tabbed","immersive-browse","interactive"],"style":"tabbed-center","palette":["#faf9f5","#1a1918","#a66900"],"theme":"light","parents":["025-endless-a"],"mergedFrom":["033-immersive-browse"],"created":"2026-04-12"}
+</script>
+<style>
+  :root {
+    --bg:#111827;--surface:#1a2236;--surface2:#1f2940;
+    --border:#2e3a50;--border-strong:#3d4d66;
+    --text:#e2ddd0;--dim:#8090a4;--faint:#4d5f77;--accent:#e8a840;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:'Iowan Old Style','Palatino Linotype',Palatino,'Hoefler Text','Libre Baskerville',Georgia,serif;
+    background:var(--bg);color:var(--text);font-size:15px;line-height:1.55;
+    -webkit-font-smoothing:antialiased;font-feature-settings:"kern" 1,"liga" 1;
+    font-variant-numeric:oldstyle-nums;height:100vh;overflow:hidden;
+  }
+  .layout{
+    max-width:1280px;margin:0 auto;display:grid;
+    grid-template-columns:80px 1fr 280px;height:100vh;
+    transition:grid-template-columns .4s ease;
+  }
+  .layout.immersive{grid-template-columns:80px 1fr 0px}
+
+  .chapters{border-right:1px solid var(--border);display:flex;flex-direction:column}
+  .ch{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s;position:relative;padding:.3rem .2rem;min-height:0;user-select:none}
+  .ch:last-child{border-bottom:none}
+  .ch:hover{background:var(--surface2)}
+  .ch.active{background:var(--surface2)}
+  .ch.active::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent)}
+  .ch .lb{writing-mode:vertical-lr;text-orientation:mixed;font-size:.52rem;font-style:italic;letter-spacing:.06em;color:var(--faint);text-transform:lowercase}
+  .ch.active .lb{color:var(--accent)}
+  .ch .yr{writing-mode:vertical-lr;text-orientation:mixed;font-size:.44rem;color:var(--faint);font-variant-numeric:oldstyle-nums tabular-nums;margin-top:.2rem}
+  .ch .dots{display:flex;flex-direction:column;gap:1px;margin-top:.3rem;align-items:center}
+  .ch .d{width:6px;height:6px;border-radius:50%;background:var(--border-strong)}
+  .ch.active .d{background:var(--accent)}
+  .ch .d.e{background:transparent;border:1px solid var(--border)}
+  .ch .d.x{width:8px;height:8px;background:var(--text)}
+  .ch.active .d.x{background:var(--accent)}
+
+  .center{overflow-y:auto}
+  .tabs-bar{display:flex;border-bottom:1px solid var(--border);padding:0 2.5rem;gap:0;position:sticky;top:0;background:var(--bg);z-index:6}
+  .tab{padding:.7rem 1.2rem;font-size:.72rem;font-style:italic;letter-spacing:.06em;color:var(--dim);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;user-select:none}
+  .tab:hover{color:var(--text)}
+  .tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+  .tabs-content{padding:1.5rem 2.5rem 4rem}
+
+  .sl{font-size:.6rem;font-style:italic;letter-spacing:.08em;color:var(--dim);text-transform:lowercase;margin-bottom:.4rem}
+  .tw{position:relative}
+  .tw textarea{width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:inherit;font-size:.92rem;padding:.7rem 2.8rem .7rem .9rem;resize:none;min-height:56px;line-height:1.55}
+  .tw textarea:focus{outline:none;border-color:var(--text)}
+  .tw textarea::placeholder{color:var(--faint);font-style:italic}
+  .sb{position:absolute;bottom:.5rem;right:.5rem;background:transparent;border:1px solid var(--border);color:var(--dim);width:1.8rem;height:1.8rem;border-radius:50%;cursor:pointer;font-family:inherit;font-size:.8rem;display:flex;align-items:center;justify-content:center}
+  .sb:hover{border-color:var(--text);color:var(--text)}
+
+  .qsec{margin-bottom:1.3rem}
+  .iv{padding-top:1rem;border-top:1px solid var(--border);margin-bottom:1.3rem}
+  .iv-m{font-size:.68rem;color:var(--dim);font-style:italic;margin-bottom:.4rem}
+  .iv-q{font-size:1.1rem;line-height:1.45;font-style:italic;margin-bottom:.8rem;max-width:540px}
+  .iv .tw textarea{min-height:68px}
+  .iv-a{display:flex;gap:.8rem;margin-top:.5rem;font-size:.72rem;color:var(--dim);font-style:italic}
+  .iv-a a{color:var(--dim);cursor:pointer;text-decoration:none;border-bottom:1px dotted var(--border)}
+  .iv-a a:hover{color:var(--text)}
+
+  .brw-bar{display:flex;align-items:center;gap:.5rem;margin-bottom:.8rem;position:sticky;top:0;background:var(--bg);padding:.4rem 0;z-index:5;border-bottom:1px solid var(--border)}
+  .brw-bar input{background:var(--surface);border:1px solid var(--border);padding:.35rem .6rem;color:var(--text);font-family:inherit;font-size:.78rem;font-style:italic;flex:1;min-width:80px}
+  .brw-bar input:focus{outline:none;border-color:var(--text)}
+  .ftag{font-size:.58rem;color:var(--accent);font-style:italic;background:var(--surface2);padding:.2rem .5rem;white-space:nowrap}
+
+  .brw-body{font-family:inherit;white-space:pre-wrap;word-wrap:break-word;font-size:.88rem;line-height:1.7;color:var(--text);font-variant-numeric:oldstyle-nums}
+  .brw-body .yh{font-size:1.3rem;font-weight:400;font-variant:small-caps;letter-spacing:.05em;display:block;margin:2rem 0 .6rem;padding-bottom:.3rem;border-bottom:1px solid var(--border)}
+  .brw-body .yh:first-child{margin-top:0}
+  .brw-body .mh{font-size:.92rem;font-style:italic;color:var(--dim);margin-top:1rem;display:inline-block}
+  .brw-body .dt{font-size:.72rem;color:var(--faint);font-style:italic;margin-right:.3em}
+  .brw-body .entry{display:block;margin-bottom:.15rem}
+  .brw-body .entry.hidden{display:none}
+
+  /* Random tab */
+  .random-card{max-width:600px;margin:2rem auto}
+  .random-entry{font-size:1.1rem;line-height:1.7;font-style:italic;margin-bottom:1.2rem}
+  .random-meta{font-size:.72rem;color:var(--dim);margin-bottom:1.5rem}
+  .random-next{background:transparent;border:1px solid var(--border);color:var(--dim);padding:.5rem 1.2rem;font-family:inherit;font-size:.78rem;cursor:pointer;font-style:italic}
+  .random-next:hover{border-color:var(--text);color:var(--text)}
+
+  .tab-panel{display:none}
+  .tab-panel.active{display:block}
+
+  .side{border-left:1px solid var(--border);padding:1.8rem 1.3rem;overflow-y:auto;position:sticky;top:0;height:100vh;overflow:hidden;transition:padding .4s ease,opacity .4s ease}
+  .layout.immersive .side{padding:0;opacity:0;pointer-events:none;border-left:none}
+  .ss{margin-bottom:1.3rem;padding-bottom:1rem;border-bottom:1px solid var(--border)}
+  .ss:last-child{border-bottom:none}
+  .st{font-size:.56rem;font-style:italic;letter-spacing:.08em;color:var(--dim);text-transform:lowercase;margin-bottom:.4rem}
+  .oq{border-left:2px solid var(--accent);padding-left:.7rem;font-size:.8rem;line-height:1.5;font-style:italic}
+  .om{font-size:.6rem;color:var(--dim);margin-top:.3rem;padding-left:.7rem;font-style:italic}
+  .pl{display:flex;flex-direction:column}
+  .pi{padding:.35rem 0;border-bottom:1px solid var(--border);display:flex;align-items:baseline;justify-content:space-between;cursor:pointer;transition:background .15s}
+  .pi:last-child{border-bottom:none}
+  .pi:hover{background:var(--surface2);margin:0 -.3rem;padding-left:.3rem;padding-right:.3rem}
+  .pn{font-size:.82rem;color:var(--text)}
+  .pc{font-size:.62rem;color:var(--faint);font-style:italic;font-variant-numeric:oldstyle-nums tabular-nums}
+  .gi{padding:.25rem 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;font-size:.75rem}
+  .gi:last-child{border-bottom:none}
+  .gy{font-variant-numeric:oldstyle-nums}
+  .gd{color:var(--dim);font-style:italic;font-size:.65rem}
+  .tc{display:flex;flex-direction:column;gap:.25rem}
+  .bt{background:transparent;color:var(--dim);border:1px solid var(--border);padding:.35rem .5rem;font-family:inherit;font-size:.68rem;cursor:pointer;text-align:left;transition:all .15s}
+  .bt:hover{border-color:var(--text);color:var(--text)}
+
+  .imm-toggle{position:fixed;right:12px;top:50%;transform:translateY(-50%);z-index:100;background:var(--surface);border:1px solid var(--border);color:var(--dim);width:24px;height:48px;cursor:pointer;font-family:inherit;font-size:.7rem;display:flex;align-items:center;justify-content:center;transition:opacity .3s}
+  .imm-toggle:hover{border-color:var(--text);color:var(--text)}
+</style>
+</head>
+<body>
+<button class="imm-toggle" id="immToggle" title="Toggle sidebar">&lsaquo;</button>
+<div class="layout">
+<div class="chapters">
+  <div class="ch active" data-f="all"><span class="lb">all</span></div>
+  <div class="ch" data-f="baby" data-y="1991-1996"><span class="lb">baby</span><span class="yr">'91-'96</span><div class="dots"><span class="d e"></span><span class="d e"></span><span class="d"></span><span class="d"></span><span class="d"></span><span class="d"></span></div></div>
+  <div class="ch" data-f="kid" data-y="1997-2003"><span class="lb">kid</span><span class="yr">'97-'03</span><div class="dots"><span class="d"></span><span class="d"></span><span class="d"></span><span class="d"></span><span class="d"></span><span class="d"></span><span class="d"></span></div></div>
+  <div class="ch" data-f="teen" data-y="2004-2009"><span class="lb">teen</span><span class="yr">'04-'09</span><div class="dots"><span class="d"></span><span class="d"></span><span class="d"></span><span class="d"></span><span class="d"></span><span class="d"></span></div></div>
+  <div class="ch" data-f="young" data-y="2010-2016"><span class="lb">young</span><span class="yr">'10-'16</span><div class="dots"><span class="d"></span><span class="d e"></span><span class="d"></span><span class="d e"></span><span class="d"></span><span class="d e"></span><span class="d e"></span></div></div>
+  <div class="ch" data-f="adult" data-y="2017-2030"><span class="lb">adult</span><span class="yr">'17-now</span><div class="dots"><span class="d"></span><span class="d"></span><span class="d"></span><span class="d x"></span><span class="d x"></span><span class="d x"></span><span class="d x"></span></div></div>
+</div>
+
+<div class="center">
+  <div class="tabs-bar">
+    <div class="tab active" data-tab="write">write</div>
+    <div class="tab" data-tab="read">read</div>
+    <div class="tab" data-tab="random">random</div>
+  </div>
+  <div class="tabs-content">
+    <div class="tab-panel active" id="panel-write">
+      <div class="iv" id="ivSection">
+        <div class="iv-m" id="ivMeta">2008 -- age 17 -- teen -- 4 answered</div>
+        <div class="iv-q" id="ivQ"></div>
+        <div class="tw"><textarea id="ivAns" placeholder="..."></textarea><button class="sb" title="save & next" id="ivSave">&#x21B5;</button></div>
+        <div class="iv-a"><a id="ivReroll">different question</a><span style="color:var(--faint)">&#183;</span><a id="ivSkip">skip year</a><span style="color:var(--faint)">&#183;</span><a id="ivSpec">+ month/day</a></div>
+      </div>
+      <div class="qsec"><div class="sl">right now</div><div class="tw"><textarea placeholder="what is happening..."></textarea><button class="sb" title="save" id="qSave">&#x21B5;</button></div></div>
+    </div>
+    <div class="tab-panel" id="panel-random">
+      <div class="random-card">
+        <div class="random-entry" id="randEntry"></div>
+        <div class="random-meta" id="randMeta"></div>
+        <button class="random-next" id="randNext">next random entry</button>
+      </div>
+    </div>
+    <div class="brw" id="brw">
+      <div class="brw-bar"><input type="search" placeholder="search entries..." id="brwSearch"><span class="ftag" id="ftag">all</span></div>
+      <div class="brw-body" id="brwBody"></div>
+    </div>
+  </div>
+</div>
+
+<div class="side">
+  <div class="ss"><div class="st">on this day</div><div class="oq">feeling so alive... just kicked on some shrooms and then Jamiroquai nostalgia from scrubs inspired</div><div class="om">2026 -- earlier today</div></div>
+  <div class="ss"><div class="st">people</div><div class="pl"><div class="pi" data-person="Alexandra"><span class="pn">Alexandra</span><span class="pc">12</span></div><div class="pi" data-person="Torsten"><span class="pn">Torsten</span><span class="pc">8</span></div><div class="pi" data-person="Vanessa"><span class="pn">Vanessa</span><span class="pc">6</span></div><div class="pi" data-person="Kev"><span class="pn">Kev</span><span class="pc">4</span></div><div class="pi" data-person="Chiara"><span class="pn">Chiara</span><span class="pc">3</span></div></div></div>
+  <div class="ss"><div class="st">blind spots</div><div class="gi"><span class="gy">1991-1992</span><span class="gd">2 yrs</span></div><div class="gi"><span class="gy">2011</span><span class="gd">1 yr</span></div><div class="gi"><span class="gy">2015-2016</span><span class="gd">2 yrs</span></div><div class="gi"><span class="gy">2013</span><span class="gd">1 yr</span></div></div>
+  <div class="ss"><div class="st">tools</div><div class="tc"><button class="bt" id="tInc">Process incoming (8)</button><button class="bt" id="tPhotos">Photos</button><button class="bt" id="tStats">Stats</button><button class="bt" id="tDl">Download .txt</button></div></div>
+</div>
+</div>
+
+<script>
+var E=[
+{y:2026,m:4,d:10,t:"17:21",x:"feeling so alive... just kicked on some shrooms and then Jamiroquai nostalgia from scrubs inspired... sooo good, cleaning up at the same time, weekend vibes haha love it.... hitting so good"},
+{y:2026,m:4,d:7,t:"14:53",x:"feeling all the complicated feelings of therapy at the low cost of this app haha"},
+{y:2026,m:4,d:5,t:"01:27",x:"visions of real life being brighter and more colorful and tangible than any perfect tv show"},
+{y:2026,m:3,d:28,t:"22:38",x:"I am so grateful... for burger king, vapes, lexi, being able to afford it all ... tosca, nice interior design, feeling at home, Aylin being nice and sharing, ..."},
+{y:2026,m:3,d:19,t:"16:47",x:"what?! both nano revive pix AND style my space have a new customer in 24h. must be spring time :)"},
+{y:2026,m:3,d:14,t:"20:35",x:"getting a little more than I bargained for with the shrooms hitting VERY well. I think the 30m hydration I usually do is really way too little hydration"},
+{y:2026,m:3,d:10,t:"20:05",x:"remembering how to just close my eyes and let my imagination go. I feel like I haven't done that in a long long time, probably not since I moved away"},
+{y:2026,m:3,d:4,t:"21:20",x:"feeling alive: hardly sleeping and just being inspired for every aspect of every work"},
+{y:2026,m:3,d:2,t:"13:21",x:"feeling alive in the morning routine with playing, caffeine and the occasional appaday going really well like x-wing and the other game"},
+{y:2026,m:2,d:26,t:"11:25",x:"feel alive just closing the laptop right after daily and playing Polytopia with my coffee in my comfy bed not giving a fuck"},
+{y:2026,m:2,d:25,t:"17:40",x:"when I felt alive today: just playing Polytopia right after first meeting. new vape. sun shining and bitching about FIS to Sylvia because it's true"},
+{y:2026,m:2,d:25,t:"01:23",x:"feeling despair, like I need to move on SO urgently. Like the TIME IS NOW. FUCK"},
+{y:2026,m:2,d:24,t:"01:27",x:"feeling kind of stuck. not making much progress in either job OR side projects OR relationships... just same old"},
+{y:2026,m:2,d:17,t:"16:41",x:"I do feel like I tapped into a natural oil reserve of power recently. It must be the \"habit forming only for forming habits\""},
+{y:2026,m:2,d:11,t:"01:53",x:"journal: today I'm still lowkey mad at Alexandra for being such a biatch. I mean why do that?"},
+{y:2026,m:2,d:6,t:"15:28",x:"so fucking annoying to deal w Alexandra's newfound attitude. so why am I dealing with it?"},
+{y:2026,m:2,d:4,t:"14:46",x:"today's change: word harder, smarter and always up, never Zweitjob"},
+{y:2026,m:2,d:3,t:"14:26",x:"today's area of change is doing what I ought to do. my dream is still LA but the miracle of getting my apartment look professionally fancy"},
+{y:2026,m:1,d:29,t:"23:29",x:"the last time I was this scared was I think during math studies? And what's my advice to younger me? find a better university."},
+{y:2026,m:1,d:29,t:"20:40",x:"love working in Wintergarten all the way up close to the window and having no distractions"},
+{y:2026,m:1,d:28,t:"16:00",x:"vision and dreams: LA, Cali, hot and soft wife and our own family"},
+{y:2026,m:1,d:28,t:"04:11",x:"today was so great, playing my tron multiplayer w cousins and just having a blast doing it :)"},
+{y:2026,m:1,d:21,t:"23:24",x:"Got my first sale on style-my-space so that's cool. Really stoked to see Alexandra on the weekend"},
+{y:2026,m:1,d:21,t:"21:03",x:"honestly I can't believe I'm telling a computer in natural language what I want and am actually getting pretty much exactly that"},
+{y:2026,m:1,d:17,t:"09:15",x:"looking for nooooothin, but a good time"},
+{y:2026,m:1,d:9,t:"23:12",x:"the red wine tastes so fucking good right now"},
+{y:2026,m:1,d:7,t:"18:13",x:"my skin looking radiant as ever. Must be the smoke stop or whatnot"},
+{y:2025,m:11,d:13,t:"19:51",x:"feeling soo good today but also last night already. That serotonin type high in the evening like shrooms but without"},
+{y:2025,m:10,d:15,t:"23:02",x:"working on lamy w AI... this IS my inspirator. auto created maps that don't work but give me something to interpret"},
+{y:2025,m:10,d:14,t:"09:58",x:"I love this life. Dancing and cartoons with eggs n caffeine in the morning. like a voluntary childhood"},
+{y:2025,m:10,d:9,t:"10:42",x:"today is the perfect day for wintergarten office. 12 dec Celsius outside but dark and gloomy"},
+{y:2025,m:9,d:30,t:"00:26",x:"feeling tired and just a tiny bit lost because I got that afterglow. took 3 shrooms on Sunday"},
+{y:2025,m:9,d:24,t:"01:16",x:"addicted to building prototypes. Can't talk anymore. Must sleep now. But that's a good thing"},
+{y:2025,m:9,d:19,t:"00:19",x:"what a day. I've been getting up very early which is great, I love having all this time to myself"},
+{y:2025,m:9,d:7,t:"05:26",x:"watched terrified and heretic with Kevin. Woke up pretty late"},
+{y:2025,m:8,d:31,t:"03:22",x:"what felt meaningful today? the morning build and playing Unrailed 2 w Torsten"},
+{y:2025,m:8,d:28,t:"01:18",x:"what felt meaningful today? Getting love from reddit for thinks"},
+{y:2025,m:8,d:19,t:"18:14",x:"I'm starting to think that green tea is the solution to all of my problems"},
+{y:2025,m:7,d:16,t:"13:21",x:"Had the best time in Berlin with love parade and so on... I am missing Vanessa deeper each time"},
+{y:2025,m:7,d:4,t:"00:02",x:"I miss Vanessa, kind of sad, light as a feather, perfection, minimalism, travel"},
+{y:2025,m:6,d:21,t:"14:15",x:"took 30mcg LSD ... looking like a newborn baby in my face today"},
+{y:2025,m:6,d:10,t:"00:42",x:"poem: hello and welcome to hell / the mushrooms got me going so well"},
+{y:2025,m:5,d:1,t:null,x:"..."},
+{y:2024,m:12,d:null,t:null,x:"Salzburg + Budapest w Vanessa and Fam"},
+{y:2024,m:9,d:24,t:"22:00",x:"playing pool billiard with my brother listening to Daft Punk"},
+{y:2024,m:6,d:23,t:"02:26",x:"finished Crush (movie)"},
+{y:2023,m:7,d:16,t:null,x:"Kardashians, before that Punisher, in-seam work, gym Arnold beginner program inspo, fun, Arad open Air"},
+{y:2023,m:3,d:28,t:null,x:"evolution workouts getting longer but still feel great"},
+{y:2022,m:null,d:null,t:null,x:"Curb Your Enthusiasm .. Modern Family. Supernatural"},
+{y:2021,m:null,d:null,t:null,x:"day trip with Nat. going to a Deadmau5 or Kaskade concert. And yes :)"},
+{y:2020,m:null,d:null,t:null,x:"wow 2020 had a lot of aliveness. Antler, Natalie, ... actually the whole year was perhaps peak aliveness"},
+{y:2019,m:null,d:null,t:null,x:"I was working at mc-quadrat mcq:dev ... what a good time we had, playing BeatSaber, cracking jokes... Stefano Trambusti"},
+{y:2017,m:null,d:null,t:null,x:"I went to LA the first time :)) oh my god that was almost ten years ago. It was the best day ever"},
+{y:2014,m:null,d:null,t:null,x:"late night black teas in my dorm room"},
+{y:2012,m:null,d:null,t:null,x:"to be acknowledged and mid famous for all the genius I have slumbering inside"},
+{y:2010,m:null,d:null,t:null,x:"I finally finished my fuckin Zivildienst. I hated it every day. But then I got my first girlfriend at Fasnet."},
+{y:2009,m:null,d:null,t:null,x:"having asked out some girls, coming out of my comfort zone"},
+{y:2008,m:6,d:1,t:null,x:"parties were heating up, some of us started going to Kapuziner. I think we went to Prague this year"},
+{y:2007,m:null,d:null,t:null,x:"American Pie. Playstation, Gamecube (though Wii was out already). Winning Jugendsoftwarepreis, meeting Klaus Tschira"},
+{y:2005,m:null,d:null,t:null,x:"Mit Torsten in seinem Zimmer, wir gehen uber den \"Crimes\" Code"},
+{y:2004,m:null,d:null,t:null,x:"Playing Star Wars Rogue Leader with Torsten on GameCube"},
+{y:2003,m:null,d:null,t:null,x:"keep programming, don't worry about girls, worry about business"},
+{y:2002,m:null,d:null,t:null,x:"prooobably a GameCube with Wind Waker and probably also the (only?) year I got exactly what I wanted for Christmas"},
+{y:2001,m:null,d:null,t:null,x:"definitely Torsten and still mostly only Torsten. Pokemon blue was released October 1999 so we may have been playing that still"},
+{y:2000,m:null,d:null,t:null,x:"most of those years were cornflakes in the morning, spaghetti with mom's tomato sauce sometimes and Pizza on special occasions"},
+{y:1999,m:null,d:null,t:null,x:"buy a GQ and hide it haha"},
+{y:1998,m:null,d:null,t:null,x:"trading Diddl paper on the elementary school yard. gold and purple being super valuable"},
+{y:1997,m:null,d:null,t:null,x:"my mom crying, hugging me, I feel used but also useful"},
+{y:1995,m:null,d:null,t:null,x:"mostly safe with little spikes of peak fear... being alone, locked out, the dark, ghosts"},
+{y:1994,m:null,d:null,t:null,x:"My brother teaches me to read so that we can show off to his friends"},
+{y:1993,m:null,d:null,t:null,x:"I see a crib made out of bright wood. I see my mom reaching out to me"},
+];
+
+var MN=['','January','February','March','April','May','June','July','August','September','October','November','December'];
+var ranges={all:[1991,2030],baby:[1991,1996],kid:[1997,2003],teen:[2004,2009],young:[2010,2016],adult:[2017,2030]};
+var curFilter='all';
+
+function render(filter, search){
+  var lo=ranges[filter]?ranges[filter][0]:ranges.all[0];
+  var hi=ranges[filter]?ranges[filter][1]:ranges.all[1];
+  var q=(search||'').toLowerCase();
+  var filtered=E.filter(function(e){return e.y>=lo&&e.y<=hi});
+  if(q) filtered=filtered.filter(function(e){return e.x.toLowerCase().indexOf(q)!==-1});
+  var groups={};
+  for(var i=0;i<filtered.length;i++){var e=filtered[i];if(!groups[e.y]) groups[e.y]=[];groups[e.y].push(e);}
+  var html='';
+  var years=Object.keys(groups).map(Number).sort(function(a,b){return b-a});
+  for(var yi=0;yi<years.length;yi++){
+    var y=years[yi];
+    html+='<span class="yh">'+y+'</span>\n';
+    var entries=groups[y];
+    var byM={};
+    for(var j=0;j<entries.length;j++){var ent=entries[j];var mk=ent.m||0;if(!byM[mk]) byM[mk]=[];byM[mk].push(ent);}
+    var months=Object.keys(byM).map(Number).sort(function(a,b){return b-a});
+    for(var mi=0;mi<months.length;mi++){
+      var mo=months[mi];
+      if(mo>0) html+='<span class="mh">'+MN[mo]+" '"+String(y).slice(2)+'</span>\n';
+      for(var k=0;k<byM[mo].length;k++){
+        var en=byM[mo][k];
+        var dt=en.t?(String(en.d).padStart(2,'0')+' '+en.t):(en.d?(en.d+'th'):(en.m?MN[en.m]:(en.y+' ish')));
+        var esc=en.x.replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        if(q){
+          var re=new RegExp('('+q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi');
+          html+='<span class="entry"><span class="dt">'+dt+':</span> '+esc.replace(re,'<mark style="background:var(--surface2)">$1</mark>')+'</span>\n';
+        } else {
+          html+='<span class="entry"><span class="dt">'+dt+':</span> '+esc+'</span>\n';
+        }
+      }
+    }
+  }
+  if(!html) html='<span style="color:var(--dim);font-style:italic">no entries for this period</span>';
+  document.getElementById('brwBody').innerHTML=html;
+}
+
+// Tabs
+var curTab='write';
+function switchTab(tabName){
+  curTab=tabName;
+  document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active')});
+  var tabEl=document.querySelector('.tab[data-tab="'+tabName+'"]');
+  if(tabEl) tabEl.classList.add('active');
+  document.querySelectorAll('.tab-panel').forEach(function(p){p.classList.remove('active')});
+  if(tabName==='write') document.getElementById('panel-write').classList.add('active');
+  if(tabName==='random') document.getElementById('panel-random').classList.add('active');
+  // read tab: no panel active, just browse visible below
+  if(tabName==='read'){render(curFilter);updateImmersive(true);}
+  else{updateImmersive(false);}
+  if(tabName==='random') showRandom();
+}
+document.querySelectorAll('.tab').forEach(function(tab){
+  tab.addEventListener('click',function(){switchTab(tab.dataset.tab)});
+});
+
+// Chapter clicks
+document.querySelectorAll('.ch').forEach(function(ch){
+  ch.addEventListener('click',function(){
+    document.querySelectorAll('.ch').forEach(function(c){c.classList.remove('active')});
+    ch.classList.add('active');
+    curFilter=ch.dataset.f;
+    document.getElementById('ftag').textContent=curFilter;
+    document.getElementById('brwSearch').value='';
+    render(curFilter);
+  });
+});
+
+var searchTimer;
+document.getElementById('brwSearch').addEventListener('input',function(e){
+  clearTimeout(searchTimer);
+  searchTimer=setTimeout(function(){render(curFilter,e.target.value)},200);
+});
+
+document.querySelectorAll('.pi').forEach(function(pi){
+  pi.addEventListener('click',function(){
+    var name=pi.dataset.person;
+    document.querySelectorAll('.ch').forEach(function(c){c.classList.remove('active')});
+    document.querySelector('.ch[data-f="all"]').classList.add('active');
+    curFilter='all';
+    document.getElementById('ftag').textContent='all';
+    document.getElementById('brwSearch').value=name;
+    render('all',name);
+  });
+});
+
+var questions=[
+  "You just walked in the front door after being out all day. It is {y}. What hits you first -- a sound, a smell, a feeling?",
+  "It is late, you are {a}, and you cannot sleep. What is keeping you up?",
+  "You are in the car or on the bus. Someone else is driving. It is {y}. What is playing?",
+  "Someone hands you a photo from {y}. You are {a}. What is in it?",
+  "You are waiting for someone in {y}. Where are you sitting, and what are you doing with your hands?",
+  "It is a regular weekday morning in {y}. Walk me through the first hour after you open your eyes.",
+  "Who do you call in {y} when something genuinely funny happens?",
+  "You are {a} and you just got home. What do you eat? Be specific.",
+  "Describe the view from wherever you spend the most time in {y}. What is directly in front of you?",
+  "Something breaks or goes wrong in {y}. What is your first move?",
+];
+var qi=0, iy=2008;
+function showQ(){
+  var a=iy-1991;
+  document.getElementById('ivQ').textContent=questions[qi%questions.length].replace(/\{y\}/g,iy).replace(/\{a\}/g,a);
+  document.getElementById('ivMeta').textContent=iy+' -- age '+a+' -- '+(iy<=1996?'baby':iy<=2003?'kid':iy<=2009?'teen':iy<=2016?'young':'adult')+' -- '+qi+' answered';
+  document.getElementById('ivAns').value='';
+}
+document.getElementById('ivReroll').addEventListener('click',function(e){e.preventDefault();qi++;showQ()});
+document.getElementById('ivSkip').addEventListener('click',function(e){e.preventDefault();iy=1991+Math.floor(Math.random()*35);qi++;showQ()});
+document.getElementById('ivSave').addEventListener('click',function(){if(document.getElementById('ivAns').value.trim()){qi++;showQ()}});
+
+document.getElementById('qSave').addEventListener('click',function(){
+  var ta=document.querySelector('.qsec textarea');
+  if(ta.value.trim()){ta.value='';ta.placeholder='saved';setTimeout(function(){ta.placeholder="what is happening..."},1500)}
+});
+
+// Random entry
+function showRandom(){
+  var idx=Math.floor(Math.random()*E.length);
+  var e=E[idx];
+  document.getElementById('randEntry').textContent=e.x;
+  var dt=e.t?(MN[e.m]+' '+e.d+', '+e.y):(e.m?MN[e.m]+' '+e.y:e.y+'');
+  document.getElementById('randMeta').textContent=dt;
+}
+document.getElementById('randNext').addEventListener('click',showRandom);
+
+document.querySelectorAll('.bt').forEach(function(b){
+  b.addEventListener('click',function(){b.style.background='var(--surface2)';setTimeout(function(){b.style.background='transparent'},300)});
+});
+
+// Immersive browse
+var immersive=false;
+var layout=document.querySelector('.layout');
+var immBtn=document.getElementById('immToggle');
+
+function updateImmersive(force){
+  if(typeof force==='boolean'){immersive=force}
+  if(immersive){layout.classList.add('immersive');immBtn.innerHTML='&rsaquo;';}
+  else{layout.classList.remove('immersive');immBtn.innerHTML='&lsaquo;';}
+}
+immBtn.addEventListener('click',function(){immersive=!immersive;updateImmersive()});
+
+render('all');
+showQ();
+showRandom();
+</script>
+</body>
+</html>

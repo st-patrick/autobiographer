@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Autobiographer — Newspaper</title>
+<script type="application/json" id="design-meta">
+{
+  "id": "004-newspaper",
+  "title": "Newspaper",
+  "subtitle": "Dense editorial grid, sticky toolbar, compact everything",
+  "category": "journal-app",
+  "tags": ["dense", "editorial", "grid", "light", "serif", "information-dense"],
+  "style": "newspaper-editorial",
+  "palette": ["#faf9f5", "#1a1918", "#a66900"],
+  "theme": "light",
+  "parents": [],
+  "mergedFrom": [],
+  "created": "2026-04-12"
+}
+</script>
+<style>
+  :root {
+    --bg: #faf9f5;
+    --surface: #fdfcf8;
+    --surface2: #f2efe4;
+    --border: #d8d3c4;
+    --border-strong: #b5ae9c;
+    --text: #1a1918;
+    --dim: #6f6a60;
+    --faint: #9a9587;
+    --accent: #a66900;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Hoefler Text', 'Libre Baskerville', Georgia, serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 15px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: "kern" 1, "liga" 1;
+    font-variant-numeric: oldstyle-nums;
+    padding-bottom: 60px;
+  }
+
+  .wrap {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 1.5rem 1.5rem 2rem;
+  }
+
+  /* ── Masthead ── */
+  .masthead {
+    text-align: center;
+    padding: 1rem 0 0.8rem;
+    border-bottom: 3px double var(--text);
+    margin-bottom: 1rem;
+  }
+  .masthead h1 {
+    font-size: 2.2rem;
+    font-weight: 400;
+    font-variant: small-caps;
+    letter-spacing: 0.06em;
+    line-height: 1;
+  }
+  .masthead .dateline {
+    font-size: 0.72rem;
+    color: var(--dim);
+    font-style: italic;
+    margin-top: 0.2rem;
+  }
+
+  /* ── Stats banner ── */
+  .stats-banner {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    border-bottom: 1px solid var(--text);
+    margin-bottom: 1rem;
+  }
+  .stat-cell {
+    padding: 0.5rem 0.4rem;
+    text-align: center;
+    border-right: 1px solid var(--border);
+  }
+  .stat-cell:last-child { border-right: none; }
+  .stat-cell .v {
+    font-size: 1.3rem;
+    font-weight: 400;
+    font-variant-numeric: oldstyle-nums tabular-nums;
+    line-height: 1;
+  }
+  .stat-cell .l {
+    font-size: 0.58rem;
+    color: var(--dim);
+    font-style: italic;
+    letter-spacing: 0.02em;
+    margin-top: 0.1rem;
+  }
+
+  /* ── Two-column grid ── */
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 1.5rem;
+    margin-bottom: 1rem;
+  }
+  .col-span { grid-column: 1 / -1; }
+
+  /* ── Quick entry (compact) ── */
+  .quick {
+    margin-bottom: 1rem;
+  }
+  .lbl {
+    font-size: 0.58rem;
+    font-style: italic;
+    letter-spacing: 0.1em;
+    color: var(--dim);
+    text-transform: uppercase;
+    margin-bottom: 0.3rem;
+  }
+  .quick-row {
+    display: flex;
+    gap: 0.3rem;
+  }
+  .quick-row textarea {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 0.88rem;
+    padding: 0.45rem 0.6rem;
+    resize: none;
+    min-height: 38px;
+    line-height: 1.45;
+  }
+  .quick-row textarea:focus { outline: none; border-color: var(--text); }
+  .quick-row textarea::placeholder { color: var(--faint); font-style: italic; }
+  .quick-row button {
+    background: var(--text);
+    color: var(--bg);
+    border: none;
+    padding: 0 0.6rem;
+    font-family: inherit;
+    font-size: 0.82rem;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  /* ── Interview ── */
+  .interview {
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 1rem;
+  }
+  .dateline-small {
+    font-size: 0.6rem;
+    font-variant: small-caps;
+    letter-spacing: 0.06em;
+    color: var(--text);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.2rem;
+    margin-bottom: 0.5rem;
+  }
+  .question {
+    font-size: 1.05rem;
+    line-height: 1.45;
+    font-style: italic;
+    margin-bottom: 0.7rem;
+  }
+  .interview textarea {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 0.88rem;
+    padding: 0.5rem 0.6rem;
+    resize: vertical;
+    min-height: 70px;
+    line-height: 1.5;
+  }
+  .interview textarea:focus { outline: none; border-color: var(--text); }
+  .interview textarea::placeholder { color: var(--faint); font-style: italic; }
+  .iv-actions {
+    display: flex;
+    gap: 0.6rem;
+    margin-top: 0.4rem;
+    font-size: 0.7rem;
+    color: var(--dim);
+    font-style: italic;
+  }
+  .iv-actions a {
+    color: var(--dim);
+    text-decoration: none;
+    border-bottom: 1px dotted var(--border);
+    cursor: pointer;
+  }
+  .iv-actions a:hover { color: var(--text); }
+
+  /* ── OTD ── */
+  .otd {
+    border-left: 2px solid var(--text);
+    padding: 0.4rem 0 0.4rem 0.8rem;
+    margin-bottom: 1rem;
+    font-size: 0.85rem;
+    line-height: 1.5;
+  }
+  .otd .year {
+    font-variant: small-caps;
+    letter-spacing: 0.04em;
+    margin-right: 0.4em;
+  }
+
+  /* ── Timeline + Gaps side by side ── */
+  .panel-title {
+    font-size: 0.58rem;
+    font-style: italic;
+    letter-spacing: 0.1em;
+    color: var(--dim);
+    text-transform: uppercase;
+    margin-bottom: 0.4rem;
+  }
+  .tl-grid {
+    display: flex;
+    gap: 1.5px;
+    flex-wrap: wrap;
+  }
+  .tl-c {
+    width: 12px; height: 12px;
+    border: 1px solid var(--border-strong);
+  }
+  .tl-c.cov { background: var(--text); border-color: var(--text); }
+  .tl-c.new { background: var(--accent); border-color: var(--accent); }
+
+  .gap-item {
+    padding: 0.3rem 0;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.78rem;
+  }
+  .gap-item:last-child { border-bottom: none; }
+  .gap-yrs { font-variant-numeric: oldstyle-nums; }
+  .gap-dur { color: var(--dim); font-style: italic; }
+
+  /* ── Sticky bottom bar ── */
+  .bottom-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--bg);
+    border-top: 1px solid var(--text);
+    display: flex;
+    justify-content: center;
+    gap: 0;
+    z-index: 50;
+  }
+  .bar-btn {
+    background: transparent;
+    border: none;
+    border-right: 1px solid var(--border);
+    color: var(--dim);
+    font-family: inherit;
+    font-size: 0.7rem;
+    font-style: italic;
+    padding: 0.6rem 1.2rem;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .bar-btn:last-child { border-right: none; }
+  .bar-btn:hover { color: var(--text); background: var(--surface2); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="masthead">
+    <h1>Autobiographer</h1>
+    <div class="dateline">Saturday, April 12, 2026 · 197 entries · est. 1991</div>
+  </div>
+
+  <div class="stats-banner">
+    <div class="stat-cell"><div class="v">197</div><div class="l">entries</div></div>
+    <div class="stat-cell"><div class="v">35</div><div class="l">years</div></div>
+    <div class="stat-cell"><div class="v">12</div><div class="l">gaps</div></div>
+    <div class="stat-cell"><div class="v">42,187</div><div class="l">words</div></div>
+  </div>
+
+  <div class="quick col-span">
+    <div class="lbl">right now</div>
+    <div class="quick-row">
+      <textarea placeholder="what's happening…" rows="1"></textarea>
+      <button>↵</button>
+    </div>
+  </div>
+
+  <div class="grid-2">
+
+    <!-- Left column -->
+    <div>
+      <div class="interview">
+        <div class="dateline-small">2008 · age 17 · interview</div>
+        <div class="question">It's 2008. What song is stuck in your head on repeat?</div>
+        <textarea placeholder="…"></textarea>
+        <div class="iv-actions">
+          <a>different question</a>
+          <span style="color:var(--faint)">·</span>
+          <a>skip year</a>
+        </div>
+      </div>
+
+      <div class="panel-title">coverage 1991–2026</div>
+      <div class="tl-grid">
+        <div class="tl-c"></div><div class="tl-c"></div><div class="tl-c cov"></div><div class="tl-c cov"></div>
+        <div class="tl-c cov"></div><div class="tl-c cov"></div><div class="tl-c cov"></div><div class="tl-c cov"></div>
+        <div class="tl-c cov"></div><div class="tl-c cov"></div><div class="tl-c cov"></div><div class="tl-c"></div>
+        <div class="tl-c"></div><div class="tl-c"></div><div class="tl-c cov"></div><div class="tl-c cov"></div>
+        <div class="tl-c cov"></div><div class="tl-c cov"></div><div class="tl-c cov"></div><div class="tl-c cov"></div>
+        <div class="tl-c cov"></div><div class="tl-c cov"></div><div class="tl-c"></div><div class="tl-c"></div>
+        <div class="tl-c cov"></div><div class="tl-c cov"></div><div class="tl-c cov"></div><div class="tl-c cov"></div>
+        <div class="tl-c cov"></div><div class="tl-c cov"></div><div class="tl-c new"></div><div class="tl-c new"></div>
+        <div class="tl-c new"></div><div class="tl-c new"></div><div class="tl-c new"></div>
+      </div>
+    </div>
+
+    <!-- Right column -->
+    <div>
+      <div class="lbl">on this day — april 12</div>
+      <div class="otd">
+        <span class="year">2026</span>
+        feeling so alive... just kicked on some shrooms and then Jamiroquai nostalgia from scrubs inspired
+      </div>
+
+      <div class="panel-title">blind spots</div>
+      <div class="gap-item">
+        <span class="gap-yrs">1991–1992</span>
+        <span class="gap-dur">2 yrs</span>
+      </div>
+      <div class="gap-item">
+        <span class="gap-yrs">2011</span>
+        <span class="gap-dur">1 yr</span>
+      </div>
+      <div class="gap-item">
+        <span class="gap-yrs">2015–2016</span>
+        <span class="gap-dur">2 yrs</span>
+      </div>
+      <div class="gap-item">
+        <span class="gap-yrs">2013</span>
+        <span class="gap-dur">1 yr</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="bottom-bar">
+  <button class="bar-btn">Incoming (8)</button>
+  <button class="bar-btn">Photos</button>
+  <button class="bar-btn">Browse</button>
+  <button class="bar-btn">Stats</button>
+  <button class="bar-btn">Download</button>
+  <button class="bar-btn">+ Past memory</button>
+</div>
+
+</body>
+</html>

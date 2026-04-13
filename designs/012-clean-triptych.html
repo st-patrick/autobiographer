@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Autobiographer — Clean Triptych</title>
+<script type="application/json" id="design-meta">
+{
+  "id": "012-clean-triptych",
+  "title": "Clean Triptych",
+  "subtitle": "Left bar as minimal progress indicator — just a thin accent-colored fill showing % of life covered",
+  "category": "journal-app",
+  "tags": ["three-column", "minimal", "progress-bar", "clean", "serif"],
+  "style": "full-bleed-minimal-spine",
+  "palette": ["#faf9f5", "#1a1918", "#a66900"],
+  "theme": "light",
+  "parents": ["008-full-bleed"],
+  "mergedFrom": [],
+  "created": "2026-04-12"
+}
+</script>
+<style>
+  :root {
+    --bg: #faf9f5; --surface: #fdfcf8; --surface2: #f2efe4;
+    --border: #d8d3c4; --border-strong: #b5ae9c;
+    --text: #1a1918; --dim: #6f6a60; --faint: #9a9587; --accent: #a66900;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; }
+  body {
+    font-family: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Hoefler Text', 'Libre Baskerville', Georgia, serif;
+    background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.55;
+    -webkit-font-smoothing: antialiased; font-feature-settings: "kern" 1, "liga" 1;
+    font-variant-numeric: oldstyle-nums;
+  }
+
+  .layout {
+    max-width: 1240px; margin: 0 auto;
+    display: grid; grid-template-columns: 28px 1fr 300px; height: 100vh;
+  }
+
+  /* ── Left: thin progress strip ── */
+  .progress-strip {
+    position: relative;
+    border-right: 1px solid var(--border);
+    background: var(--surface2);
+  }
+  .progress-fill {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--text);
+    /* 66% = roughly 23 out of 35 years covered */
+    height: 66%;
+    transition: height 0.5s;
+  }
+  .progress-new {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--accent);
+    /* recent session entries, ~20% of total */
+    height: 20%;
+  }
+  .progress-label {
+    position: absolute;
+    top: 0.6rem;
+    left: 50%;
+    transform: translateX(-50%);
+    writing-mode: vertical-lr;
+    text-orientation: mixed;
+    font-size: 0.45rem;
+    color: var(--faint);
+    font-style: italic;
+    letter-spacing: 0.06em;
+    z-index: 1;
+  }
+  .progress-pct {
+    position: absolute;
+    bottom: 0.6rem;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.5rem;
+    color: var(--bg);
+    font-style: italic;
+    z-index: 1;
+    font-variant-numeric: oldstyle-nums;
+  }
+
+  /* ── Center ── */
+  .center { padding: 2.2rem 3rem; overflow-y: auto; }
+  .header-row { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 0.1rem; }
+  h1 { font-size: 1.8rem; font-weight: 400; letter-spacing: -0.01em; line-height: 1.1; }
+  .header-date { font-size: 0.68rem; color: var(--dim); font-style: italic; }
+  .sub { color: var(--dim); font-size: 0.78rem; font-style: italic; margin-bottom: 2rem; }
+
+  .section-label { font-size: 0.62rem; font-style: italic; letter-spacing: 0.08em; color: var(--dim); text-transform: lowercase; margin-bottom: 0.5rem; }
+  .quick-section { margin-bottom: 2.5rem; }
+  .ta-wrap { position: relative; }
+  .ta-wrap textarea {
+    width: 100%; background: var(--surface); border: 1px solid var(--border);
+    color: var(--text); font-family: inherit; font-size: 0.95rem;
+    padding: 0.9rem 3rem 0.9rem 1rem; resize: none; min-height: 100px; line-height: 1.6;
+  }
+  .ta-wrap textarea:focus { outline: none; border-color: var(--text); }
+  .ta-wrap textarea::placeholder { color: var(--faint); font-style: italic; }
+  .save-btn {
+    position: absolute; bottom: 0.6rem; right: 0.6rem;
+    background: transparent; border: 1px solid var(--border); color: var(--dim);
+    width: 2rem; height: 2rem; border-radius: 50%; cursor: pointer;
+    font-family: inherit; font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .save-btn:hover { border-color: var(--text); color: var(--text); }
+
+  .interview { padding-top: 1.8rem; border-top: 1px solid var(--border); }
+  .interview-meta { font-size: 0.7rem; color: var(--dim); font-style: italic; margin-bottom: 0.8rem; }
+  .question { font-size: 1.2rem; line-height: 1.45; font-style: italic; margin-bottom: 1.2rem; max-width: 560px; }
+  .interview .ta-wrap textarea { min-height: 130px; }
+  .iv-actions { display: flex; gap: 0.8rem; margin-top: 0.7rem; font-size: 0.75rem; color: var(--dim); font-style: italic; }
+  .iv-actions a { color: var(--dim); cursor: pointer; text-decoration: none; border-bottom: 1px dotted var(--border); }
+  .iv-actions a:hover { color: var(--text); }
+
+  /* ── Right sidebar ── */
+  .sidebar { border-left: 1px solid var(--border); padding: 2.2rem 1.5rem; overflow-y: auto; }
+  .sb-section { margin-bottom: 1.4rem; padding-bottom: 1.2rem; border-bottom: 1px solid var(--border); }
+  .sb-section:last-child { border-bottom: none; }
+  .sb-title { font-size: 0.58rem; font-style: italic; letter-spacing: 0.08em; color: var(--dim); text-transform: lowercase; margin-bottom: 0.5rem; }
+
+  .stats-stack { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--border); }
+  .stat-cell { padding: 0.6rem 0.5rem; text-align: center; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+  .stat-cell:nth-child(even) { border-right: none; }
+  .stat-cell:nth-last-child(-n+2) { border-bottom: none; }
+  .stat-cell .v { font-size: 1.6rem; font-weight: 400; font-variant-numeric: oldstyle-nums tabular-nums; line-height: 1; }
+  .stat-cell .l { font-size: 0.55rem; color: var(--dim); font-style: italic; margin-top: 0.12rem; }
+
+  .otd-quote { border-left: 2px solid var(--accent); padding-left: 0.8rem; font-size: 0.82rem; line-height: 1.5; font-style: italic; }
+  .otd-meta { font-size: 0.62rem; color: var(--dim); margin-top: 0.35rem; padding-left: 0.8rem; font-style: italic; }
+
+  /* Timeline in sidebar */
+  .tl-grid { display: flex; gap: 2px; flex-wrap: wrap; }
+  .tl-c { width: 13px; height: 13px; border: 1px solid var(--border-strong); }
+  .tl-c.cov { background: var(--text); border-color: var(--text); }
+  .tl-c.new { background: var(--accent); border-color: var(--accent); }
+
+  .gap-item { padding: 0.3rem 0; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; font-size: 0.78rem; }
+  .gap-item:last-child { border-bottom: none; }
+  .gap-yrs { font-variant-numeric: oldstyle-nums; }
+  .gap-dur { color: var(--dim); font-style: italic; font-size: 0.68rem; }
+
+  .tools-col { display: flex; flex-direction: column; gap: 0.3rem; }
+  .btn { background: transparent; color: var(--dim); border: 1px solid var(--border); padding: 0.4rem 0.6rem; font-family: inherit; font-size: 0.7rem; cursor: pointer; text-align: left; transition: all 0.15s; }
+  .btn:hover { border-color: var(--text); color: var(--text); }
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- Left: thin progress strip -->
+  <div class="progress-strip">
+    <div class="progress-label">coverage</div>
+    <div class="progress-fill"></div>
+    <div class="progress-new"></div>
+    <div class="progress-pct">66%</div>
+  </div>
+
+  <!-- Center -->
+  <div class="center">
+    <div class="header-row">
+      <h1>Autobiographer</h1>
+      <span class="header-date">Saturday, April 12, 2026</span>
+    </div>
+    <div class="sub">your life, one entry at a time</div>
+
+    <div class="quick-section">
+      <div class="section-label">right now</div>
+      <div class="ta-wrap">
+        <textarea placeholder="what's happening..."></textarea>
+        <button class="save-btn" title="save">↵</button>
+      </div>
+    </div>
+
+    <div class="interview">
+      <div class="interview-meta">2008 · age 17 · 4 answered this session</div>
+      <div class="question">It's 2008. What song is stuck in your head on repeat?</div>
+      <div class="ta-wrap">
+        <textarea placeholder="…"></textarea>
+        <button class="save-btn" title="save & next">↵</button>
+      </div>
+      <div class="iv-actions">
+        <a>different question</a>
+        <span style="color:var(--faint)">·</span>
+        <a>skip year</a>
+        <span style="color:var(--faint)">·</span>
+        <a>+ month/day</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right sidebar -->
+  <div class="sidebar">
+    <div class="sb-section">
+      <div class="sb-title">your autobiography</div>
+      <div class="stats-stack">
+        <div class="stat-cell"><div class="v">197</div><div class="l">entries</div></div>
+        <div class="stat-cell"><div class="v">35</div><div class="l">years</div></div>
+        <div class="stat-cell"><div class="v">12</div><div class="l">gaps</div></div>
+        <div class="stat-cell"><div class="v">42k</div><div class="l">words</div></div>
+      </div>
+    </div>
+    <div class="sb-section">
+      <div class="sb-title">on this day — april 12</div>
+      <div class="otd-quote">feeling so alive... just kicked on some shrooms and then Jamiroquai nostalgia from scrubs inspired</div>
+      <div class="otd-meta">2026 · earlier today</div>
+    </div>
+    <div class="sb-section">
+      <div class="sb-title">coverage · 1991–2026</div>
+      <div class="tl-grid">
+        <div class="tl-c"></div><div class="tl-c"></div><div class="tl-c cov"></div><div class="tl-c cov"></div>
+        <div class="tl-c cov"></div><div class="tl-c cov"></div><div class="tl-c cov"></div><div class="tl-c cov"></div>
+        <div class="tl-c cov"></div><div class="tl-c cov"></div><div class="tl-c cov"></div><div class="tl-c"></div>
+        <div class="tl-c"></div><div class="tl-c"></div><div class="tl-c cov"></div><div class="tl-c cov"></div>
+        <div class="tl-c cov"></div><div class="tl-c cov"></div><div class="tl-c cov"></div><div class="tl-c cov"></div>
+        <div class="tl-c cov"></div><div class="tl-c cov"></div><div class="tl-c"></div><div class="tl-c"></div>
+        <div class="tl-c cov"></div><div class="tl-c cov"></div><div class="tl-c cov"></div><div class="tl-c cov"></div>
+        <div class="tl-c cov"></div><div class="tl-c cov"></div><div class="tl-c new"></div><div class="tl-c new"></div>
+        <div class="tl-c new"></div><div class="tl-c new"></div><div class="tl-c new"></div>
+      </div>
+    </div>
+    <div class="sb-section">
+      <div class="sb-title">blind spots</div>
+      <div class="gap-item"><span class="gap-yrs">1991–1992</span><span class="gap-dur">2 yrs</span></div>
+      <div class="gap-item"><span class="gap-yrs">2011</span><span class="gap-dur">1 yr</span></div>
+      <div class="gap-item"><span class="gap-yrs">2015–2016</span><span class="gap-dur">2 yrs</span></div>
+    </div>
+    <div class="sb-section">
+      <div class="sb-title">tools</div>
+      <div class="tools-col">
+        <button class="btn">Process incoming (8)</button>
+        <button class="btn">Photos</button>
+        <button class="btn">Browse</button>
+        <button class="btn">Stats</button>
+        <button class="btn">Download .txt</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

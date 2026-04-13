@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Autobiographer — Newsdesk</title>
+<script type="application/json" id="design-meta">
+{
+  "id": "007-newsdesk",
+  "title": "Newsdesk",
+  "subtitle": "Newspaper masthead meets two-column split desk with sticky toolbar",
+  "category": "journal-app",
+  "tags": ["two-column", "editorial", "masthead", "sidebar", "toolbar", "light", "serif"],
+  "style": "editorial-split",
+  "palette": ["#faf9f5", "#1a1918", "#a66900"],
+  "theme": "light",
+  "parents": ["002-split-desk", "004-newspaper"],
+  "mergedFrom": ["002-split-desk", "004-newspaper"],
+  "created": "2026-04-12"
+}
+</script>
+<style>
+  :root {
+    --bg: #faf9f5;
+    --surface: #fdfcf8;
+    --surface2: #f2efe4;
+    --border: #d8d3c4;
+    --border-strong: #b5ae9c;
+    --text: #1a1918;
+    --dim: #6f6a60;
+    --faint: #9a9587;
+    --accent: #a66900;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body { height: 100%; overflow: hidden; }
+
+  body {
+    font-family: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Hoefler Text', 'Libre Baskerville', Georgia, serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 15px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: "kern" 1, "liga" 1;
+    font-variant-numeric: oldstyle-nums;
+  }
+
+  .page {
+    max-width: 1060px;
+    margin: 0 auto;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    padding: 0 1.5rem;
+  }
+
+  /* ── Masthead ── */
+  .masthead {
+    text-align: center;
+    padding: 1.1rem 0 0.7rem;
+    border-bottom: 3px double var(--text);
+    flex-shrink: 0;
+  }
+  .masthead h1 {
+    font-size: 2.2rem;
+    font-weight: 400;
+    font-variant: small-caps;
+    letter-spacing: 0.06em;
+    line-height: 1;
+  }
+  .masthead .dateline {
+    font-size: 0.68rem;
+    color: var(--dim);
+    font-style: italic;
+    margin-top: 0.15rem;
+  }
+
+  /* ── Quick entry bar ── */
+  .quick-bar {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    padding: 0.6rem 0;
+  }
+  .quick-label {
+    font-size: 0.6rem;
+    font-style: italic;
+    color: var(--dim);
+    padding: 0.5rem 0.8rem 0 0;
+    white-space: nowrap;
+    align-self: center;
+  }
+  .quick-bar textarea {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 0.88rem;
+    padding: 0.4rem 0.7rem;
+    resize: none;
+    min-height: 34px;
+    line-height: 1.45;
+  }
+  .quick-bar textarea:focus { outline: none; border-color: var(--text); }
+  .quick-bar textarea::placeholder { color: var(--faint); font-style: italic; }
+  .quick-bar button {
+    background: var(--text);
+    color: var(--bg);
+    border: none;
+    padding: 0 0.7rem;
+    font-family: inherit;
+    font-size: 0.82rem;
+    cursor: pointer;
+    flex-shrink: 0;
+    margin-left: -1px;
+  }
+
+  /* ── Two-column body ── */
+  .columns {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .col-left {
+    padding: 1.5rem 2rem 1.5rem 0;
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+  }
+
+  .col-right {
+    padding: 1.5rem 0 1.5rem 1.5rem;
+    overflow-y: auto;
+  }
+
+  /* ── Interview (newspaper article style) ── */
+  .article-dateline {
+    font-size: 0.62rem;
+    font-variant: small-caps;
+    letter-spacing: 0.07em;
+    color: var(--text);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.25rem;
+    margin-bottom: 0.7rem;
+  }
+  .article-dateline span { color: var(--dim); font-variant: normal; font-style: italic; font-size: 0.58rem; }
+
+  .question {
+    font-size: 1.15rem;
+    line-height: 1.45;
+    font-style: italic;
+    color: var(--text);
+    margin-bottom: 1rem;
+  }
+
+  .interview textarea {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 0.92rem;
+    padding: 0.7rem 0.8rem;
+    resize: none;
+    min-height: 140px;
+    line-height: 1.55;
+  }
+  .interview textarea:focus { outline: none; border-color: var(--text); }
+  .interview textarea::placeholder { color: var(--faint); font-style: italic; }
+  .iv-actions {
+    display: flex;
+    gap: 0.7rem;
+    margin-top: 0.6rem;
+    font-size: 0.72rem;
+    color: var(--dim);
+    font-style: italic;
+  }
+  .iv-actions a {
+    color: var(--dim);
+    text-decoration: none;
+    border-bottom: 1px dotted var(--border);
+    cursor: pointer;
+  }
+  .iv-actions a:hover { color: var(--text); }
+
+  /* ── Sidebar sections ── */
+  .sb-section {
+    margin-bottom: 1.3rem;
+    padding-bottom: 1.2rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .sb-section:last-child { border-bottom: none; margin-bottom: 0; }
+
+  .sb-title {
+    font-size: 0.58rem;
+    font-style: italic;
+    letter-spacing: 0.08em;
+    color: var(--dim);
+    text-transform: lowercase;
+    margin-bottom: 0.5rem;
+  }
+
+  /* Stats banner in sidebar */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    border: 1px solid var(--border);
+  }
+  .stat-cell {
+    padding: 0.5rem 0.3rem;
+    text-align: center;
+    border-right: 1px solid var(--border);
+  }
+  .stat-cell:last-child { border-right: none; }
+  .stat-cell .v {
+    font-size: 1.5rem;
+    font-weight: 400;
+    font-variant-numeric: oldstyle-nums tabular-nums;
+    line-height: 1;
+  }
+  .stat-cell .l {
+    font-size: 0.55rem;
+    color: var(--dim);
+    font-style: italic;
+    margin-top: 0.1rem;
+  }
+
+  /* OTD */
+  .otd-quote {
+    border-left: 2px solid var(--accent);
+    padding-left: 0.8rem;
+    font-size: 0.84rem;
+    line-height: 1.5;
+    color: var(--text);
+    font-style: italic;
+  }
+  .otd-meta {
+    font-size: 0.65rem;
+    color: var(--dim);
+    margin-top: 0.35rem;
+    padding-left: 0.8rem;
+    font-style: italic;
+  }
+
+  /* Timeline */
+  .tl-grid {
+    display: flex;
+    gap: 2px;
+    flex-wrap: wrap;
+  }
+  .tl-c {
+    width: 13px; height: 13px;
+    border: 1px solid var(--border-strong);
+  }
+  .tl-c.cov { background: var(--text); border-color: var(--text); }
+  .tl-c.new { background: var(--accent); border-color: var(--accent); }
+
+  /* Gaps */
+  .gap-item {
+    padding: 0.3rem 0;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.78rem;
+  }
+  .gap-item:last-child { border-bottom: none; }
+  .gap-yrs { font-variant-numeric: oldstyle-nums; }
+  .gap-dur { color: var(--dim); font-style: italic; font-size: 0.68rem; }
+
+  /* ── Sticky bottom bar ── */
+  .bottom-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--bg);
+    border-top: 1px solid var(--text);
+    display: flex;
+    justify-content: center;
+    z-index: 50;
+    flex-shrink: 0;
+  }
+  .bar-btn {
+    background: transparent;
+    border: none;
+    border-right: 1px solid var(--border);
+    color: var(--dim);
+    font-family: inherit;
+    font-size: 0.68rem;
+    font-style: italic;
+    padding: 0.55rem 1.3rem;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .bar-btn:last-child { border-right: none; }
+  .bar-btn:hover { color: var(--text); background: var(--surface2); }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="masthead">
+    <h1>Autobiographer</h1>
+    <div class="dateline">Saturday, April 12, 2026 &middot; 197 entries &middot; est. 1991</div>
+  </div>
+
+  <div class="quick-bar">
+    <div class="quick-label">right now</div>
+    <textarea placeholder="what's happening..." rows="1"></textarea>
+    <button>&crarr;</button>
+  </div>
+
+  <div class="columns">
+
+    <div class="col-left">
+      <div class="interview">
+        <div class="article-dateline">2008 &middot; age 17 &middot; interview <span>&middot; 4 answered this session</span></div>
+        <div class="question">It's 2008. What song is stuck in your head on repeat?</div>
+        <textarea placeholder="..."></textarea>
+        <div class="iv-actions">
+          <a>different question</a>
+          <span style="color:var(--faint)">&middot;</span>
+          <a>skip year</a>
+          <span style="color:var(--faint)">&middot;</span>
+          <a>+ month/day</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-right">
+
+      <div class="sb-section">
+        <div class="sb-title">your autobiography</div>
+        <div class="stats-row">
+          <div class="stat-cell"><div class="v">197</div><div class="l">entries</div></div>
+          <div class="stat-cell"><div class="v">35</div><div class="l">years</div></div>
+          <div class="stat-cell"><div class="v">12</div><div class="l">gaps</div></div>
+          <div class="stat-cell"><div class="v">42k</div><div class="l">words</div></div>
+        </div>
+      </div>
+
+      <div class="sb-section">
+        <div class="sb-title">on this day &mdash; april 12</div>
+        <div class="otd-quote">
+          feeling so alive... just kicked on some shrooms and then Jamiroquai nostalgia from scrubs inspired
+        </div>
+        <div class="otd-meta">2026 &middot; earlier today</div>
+      </div>
+
+      <div class="sb-section">
+        <div class="sb-title">coverage &middot; 1991&ndash;2026</div>
+        <div class="tl-grid">
+          <div class="tl-c"></div><div class="tl-c"></div><div class="tl-c cov"></div><div class="tl-c cov"></div>
+          <div class="tl-c cov"></div><div class="tl-c cov"></div><div class="tl-c cov"></div><div class="tl-c cov"></div>
+          <div class="tl-c cov"></div><div class="tl-c cov"></div><div class="tl-c cov"></div><div class="tl-c"></div>
+          <div class="tl-c"></div><div class="tl-c"></div><div class="tl-c cov"></div><div class="tl-c cov"></div>
+          <div class="tl-c cov"></div><div class="tl-c cov"></div><div class="tl-c cov"></div><div class="tl-c cov"></div>
+          <div class="tl-c cov"></div><div class="tl-c cov"></div><div class="tl-c"></div><div class="tl-c"></div>
+          <div class="tl-c cov"></div><div class="tl-c cov"></div><div class="tl-c cov"></div><div class="tl-c cov"></div>
+          <div class="tl-c cov"></div><div class="tl-c cov"></div><div class="tl-c new"></div><div class="tl-c new"></div>
+          <div class="tl-c new"></div><div class="tl-c new"></div><div class="tl-c new"></div>
+        </div>
+      </div>
+
+      <div class="sb-section">
+        <div class="sb-title">blind spots</div>
+        <div class="gap-item">
+          <span class="gap-yrs">1991&ndash;1992</span>
+          <span class="gap-dur">2 yrs</span>
+        </div>
+        <div class="gap-item">
+          <span class="gap-yrs">2011</span>
+          <span class="gap-dur">1 yr</span>
+        </div>
+        <div class="gap-item">
+          <span class="gap-yrs">2015&ndash;2016</span>
+          <span class="gap-dur">2 yrs</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="bottom-bar">
+  <button class="bar-btn">Incoming (8)</button>
+  <button class="bar-btn">Photos</button>
+  <button class="bar-btn">Browse</button>
+  <button class="bar-btn">Stats</button>
+  <button class="bar-btn">Download .txt</button>
+</div>
+
+</body>
+</html>

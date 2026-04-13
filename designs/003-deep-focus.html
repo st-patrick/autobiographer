@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Autobiographer — Deep Focus</title>
+<script type="application/json" id="design-meta">
+{
+  "id": "003-deep-focus",
+  "title": "Deep Focus",
+  "subtitle": "Huge textareas fill the viewport, everything else hidden",
+  "category": "journal-app",
+  "tags": ["minimal", "focus", "large-type", "light", "serif", "spacious"],
+  "style": "maximalist-whitespace",
+  "palette": ["#faf9f5", "#1a1918", "#a66900"],
+  "theme": "light",
+  "parents": [],
+  "mergedFrom": [],
+  "created": "2026-04-12"
+}
+</script>
+<style>
+  :root {
+    --bg: #faf9f5;
+    --surface: #fdfcf8;
+    --surface2: #f2efe4;
+    --border: #d8d3c4;
+    --border-strong: #b5ae9c;
+    --text: #1a1918;
+    --dim: #6f6a60;
+    --faint: #9a9587;
+    --accent: #a66900;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Hoefler Text', 'Libre Baskerville', Georgia, serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: "kern" 1, "liga" 1;
+    font-variant-numeric: oldstyle-nums;
+    overflow-x: hidden;
+  }
+
+  .wrap {
+    max-width: 580px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+  }
+
+  /* ── Zone 1: quick entry ── */
+  .zone {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: relative;
+  }
+
+  .zone-quick .context {
+    font-size: 0.72rem;
+    color: var(--faint);
+    font-style: italic;
+    text-align: center;
+    margin-bottom: 1.5rem;
+    letter-spacing: 0.03em;
+  }
+  .zone-quick textarea {
+    width: 100%;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 1.15rem;
+    padding: 0 0 1.5rem 0;
+    resize: none;
+    min-height: 45vh;
+    line-height: 1.7;
+  }
+  .zone-quick textarea:focus { outline: none; border-color: var(--text); }
+  .zone-quick textarea::placeholder { color: var(--faint); font-style: italic; }
+  .zone-quick .hint {
+    text-align: right;
+    font-size: 0.68rem;
+    color: var(--faint);
+    font-style: italic;
+    margin-top: 0.6rem;
+  }
+  .scroll-down {
+    position: absolute;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    color: var(--faint);
+    font-style: italic;
+    font-size: 1rem;
+  }
+
+  /* ── Zone 2: interview ── */
+  .zone-interview {
+    text-align: center;
+  }
+  .zone-interview .meta {
+    font-size: 0.72rem;
+    color: var(--dim);
+    font-style: italic;
+    margin-bottom: 2rem;
+  }
+  .zone-interview .question {
+    font-size: 1.5rem;
+    line-height: 1.45;
+    font-style: italic;
+    color: var(--text);
+    max-width: 36ch;
+    margin: 0 auto 2.5rem;
+  }
+  .zone-interview textarea {
+    width: 100%;
+    background: transparent;
+    border: none;
+    border-top: 1px solid var(--border);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 1.1rem;
+    padding: 1.5rem 0;
+    resize: none;
+    min-height: 35vh;
+    line-height: 1.7;
+    text-align: left;
+  }
+  .zone-interview textarea:focus { outline: none; }
+  .zone-interview textarea::placeholder { color: var(--faint); font-style: italic; text-align: center; }
+  .zone-interview .actions {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    font-size: 0.78rem;
+    color: var(--dim);
+    font-style: italic;
+    margin-top: 0.5rem;
+  }
+  .zone-interview .actions a {
+    color: var(--dim);
+    cursor: pointer;
+    text-decoration: none;
+    border-bottom: 1px dotted var(--border);
+  }
+  .zone-interview .actions a:hover { color: var(--text); }
+
+  /* ── Drawer trigger ── */
+  .drawer-trigger {
+    text-align: center;
+    padding: 3rem 0;
+  }
+  .drawer-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--dim);
+    font-family: inherit;
+    font-size: 0.82rem;
+    font-style: italic;
+    padding: 0.6rem 2rem;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .drawer-btn:hover { border-color: var(--text); color: var(--text); }
+
+  /* ── Drawer content (library) ── */
+  .drawer {
+    padding: 2rem 0 4rem;
+    border-top: 1px solid var(--border);
+  }
+  .drawer-title {
+    font-size: 0.63rem;
+    font-style: italic;
+    letter-spacing: 0.08em;
+    color: var(--dim);
+    text-transform: lowercase;
+    margin-bottom: 1rem;
+    text-align: center;
+  }
+
+  .stats {
+    display: flex;
+    gap: 0;
+    padding: 0.8rem 0;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 1.5rem;
+  }
+  .stat {
+    flex: 1;
+    text-align: center;
+    padding: 0 0.5rem;
+    border-right: 1px solid var(--border);
+  }
+  .stat:last-child { border-right: none; }
+  .stat .v {
+    font-size: 1.5rem;
+    font-weight: 400;
+    font-variant-numeric: oldstyle-nums tabular-nums;
+    line-height: 1.1;
+  }
+  .stat .l {
+    font-size: 0.6rem;
+    color: var(--dim);
+    font-style: italic;
+    margin-top: 0.15rem;
+  }
+
+  .toolbar {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 1.5rem;
+  }
+  .btn {
+    background: transparent;
+    color: var(--dim);
+    border: 1px solid var(--border);
+    padding: 0.4rem 0.9rem;
+    font-family: inherit;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn:hover { border-color: var(--text); color: var(--text); }
+
+  .tl-grid {
+    display: flex;
+    gap: 2px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+  }
+  .tl-c {
+    width: 14px; height: 14px;
+    border: 1px solid var(--border-strong);
+  }
+  .tl-c.cov { background: var(--text); border-color: var(--text); }
+  .tl-c.new { background: var(--accent); border-color: var(--accent); }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <!-- Zone 1: just write -->
+  <section class="zone zone-quick">
+    <div class="context">197 entries · april 12, 2026</div>
+    <textarea placeholder="right now…"></textarea>
+    <div class="hint">cmd+enter to save & download</div>
+    <div class="scroll-down">↓</div>
+  </section>
+
+  <!-- Zone 2: interview -->
+  <section class="zone zone-interview">
+    <div class="meta">2008 · age 17</div>
+    <div class="question">It's 2008. What song is stuck in your head on repeat?</div>
+    <textarea placeholder="…"></textarea>
+    <div class="actions">
+      <a>different question</a>
+      <a>skip year</a>
+      <a>+ date details</a>
+    </div>
+    <div class="scroll-down">↓</div>
+  </section>
+
+  <!-- Drawer: everything else -->
+  <div class="drawer-trigger">
+    <button class="drawer-btn">library & stats ↓</button>
+  </div>
+
+  <div class="drawer">
+    <div class="drawer-title">your life at a glance</div>
+
+    <div class="stats">
+      <div class="stat"><div class="v">197</div><div class="l">entries</div></div>
+      <div class="stat"><div class="v">35</div><div class="l">years</div></div>
+      <div class="stat"><div class="v">12</div><div class="l">gaps</div></div>
+      <div class="stat"><div class="v">42k</div><div class="l">words</div></div>
+    </div>
+
+    <div class="tl-grid">
+      <div class="tl-c"></div><div class="tl-c"></div><div class="tl-c cov"></div><div class="tl-c cov"></div>
+      <div class="tl-c cov"></div><div class="tl-c cov"></div><div class="tl-c cov"></div><div class="tl-c cov"></div>
+      <div class="tl-c cov"></div><div class="tl-c cov"></div><div class="tl-c cov"></div><div class="tl-c"></div>
+      <div class="tl-c"></div><div class="tl-c"></div><div class="tl-c cov"></div><div class="tl-c cov"></div>
+      <div class="tl-c cov"></div><div class="tl-c cov"></div><div class="tl-c cov"></div><div class="tl-c cov"></div>
+      <div class="tl-c cov"></div><div class="tl-c cov"></div><div class="tl-c"></div><div class="tl-c"></div>
+      <div class="tl-c cov"></div><div class="tl-c cov"></div><div class="tl-c cov"></div><div class="tl-c cov"></div>
+      <div class="tl-c cov"></div><div class="tl-c cov"></div><div class="tl-c new"></div><div class="tl-c new"></div>
+      <div class="tl-c new"></div><div class="tl-c new"></div><div class="tl-c new"></div>
+    </div>
+
+    <div class="toolbar">
+      <button class="btn">Process incoming (8)</button>
+      <button class="btn">Photos</button>
+      <button class="btn">Browse</button>
+      <button class="btn">Stats</button>
+      <button class="btn">Download .txt</button>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

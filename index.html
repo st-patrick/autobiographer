@@ -24,7 +24,7 @@
     --warn-bg: #fdf4f0;
   }
   @media (prefers-color-scheme: dark) {
-    :root {
+    :root:not([data-theme="light"]) {
       --bg: #18161a;
       --surface: #1f1d20;
       --surface2: #27252a;
@@ -42,6 +42,41 @@
       --warn-bg: #2a1a1a;
     }
   }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #18161a;
+    --surface: #1f1d20;
+    --surface2: #27252a;
+    --border: #3a3740;
+    --border-strong: #555159;
+    --text: #ece8dc;
+    --dim: #8a8579;
+    --faint: #5a554d;
+    --accent: #ece8dc;
+    --cov: #ece8dc;
+    --empty: transparent;
+    --new: #c9a368;
+    --highlight: #3d3620;
+    --warn: #e8a5a5;
+    --warn-bg: #2a1a1a;
+  }
+  :root[data-theme="light"] { color-scheme: light; }
+
+  .theme-toggle {
+    position: fixed;
+    bottom: 0.8rem;
+    right: 0.8rem;
+    z-index: 200;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--dim);
+    padding: 0.25rem 0.6rem;
+    font-family: inherit;
+    font-size: 0.72rem;
+    font-style: italic;
+    cursor: pointer;
+  }
+  .theme-toggle:hover { color: var(--text); border-color: var(--text); }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -731,6 +766,18 @@
     padding: 0 2px;
   }
 
+  /* edit mode */
+  .btn.edit-toggle.active {
+    background: var(--text);
+    color: var(--bg);
+  }
+  .viewer-content.editing {
+    outline: none;
+    border-left: 3px solid var(--new);
+    padding-left: 0.8rem;
+    margin-left: -1.1rem;
+  }
+
   /* on this day — quote block style */
   .otd {
     background: transparent;
@@ -1091,7 +1138,497 @@
     from { opacity: 0; transform: translateY(4px); }
     to { opacity: 1; transform: translateY(0); }
   }
+
+  /* ── three-column overview (ported from design 106) ── */
+  body.overview-active {
+    padding: 0;
+    display: block;
+    height: 100vh;
+    overflow: hidden;
+    font-size: 13px;
+    line-height: 1.4;
+  }
+  body.overview-active .wrap { max-width: none; width: 100%; }
+  body.overview-active .version-tag,
+  body.overview-active .saved-badge-float { z-index: 200; }
+
+  .layout {
+    max-width: 1280px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 80px 1fr 280px;
+    height: 100vh;
+    transition: grid-template-columns .4s ease;
+  }
+  .layout.immersive { grid-template-columns: 80px 1fr 0px; }
+
+  .chapters {
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+  }
+  .ch {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background .15s;
+    position: relative;
+    padding: .3rem .2rem;
+    min-height: 0;
+    user-select: none;
+  }
+  .ch:last-child { border-bottom: none; }
+  .ch:hover { background: var(--surface2); }
+  .ch.active { background: var(--surface2); }
+  .ch.active::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--new);
+  }
+  .ch .lb {
+    writing-mode: vertical-lr;
+    text-orientation: mixed;
+    font-size: .52rem;
+    font-style: italic;
+    letter-spacing: .06em;
+    color: var(--faint);
+    text-transform: lowercase;
+  }
+  .ch.active .lb { color: var(--new); }
+  .ch .yr {
+    writing-mode: vertical-lr;
+    text-orientation: mixed;
+    font-size: .44rem;
+    color: var(--faint);
+    font-variant-numeric: oldstyle-nums tabular-nums;
+    margin-top: .2rem;
+  }
+  .ch .dots {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    margin-top: .3rem;
+    align-items: center;
+  }
+  .ch .d {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--border-strong);
+  }
+  .ch.active .d { background: var(--new); }
+  .ch .d.e { background: transparent; border: 1px solid var(--border); }
+  .ch .d.x { width: 8px; height: 8px; background: var(--text); }
+  .ch.active .d.x { background: var(--new); }
+
+  .center { overflow-y: auto; }
+  .tabs-bar {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    padding: 0 2.5rem;
+    gap: 0;
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    z-index: 6;
+  }
+  .tab {
+    padding: .5rem .9rem;
+    font-size: .65rem;
+    font-style: italic;
+    letter-spacing: .06em;
+    color: var(--dim);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all .15s;
+    user-select: none;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active {
+    color: var(--new);
+    border-bottom-color: var(--new);
+  }
+  .tabs-content { padding: .8rem 1.8rem 3rem; }
+
+  .sl { display: none; }
+  .tw { position: relative; }
+  .tw textarea {
+    width: 100%;
+    background: transparent;
+    border: none;
+    color: var(--text);
+    font-family: inherit;
+    font-size: .88rem;
+    padding: .3rem 2.4rem .3rem 0;
+    resize: none;
+    min-height: 28px;
+    line-height: 1.55;
+  }
+  .tw textarea:focus { outline: none; }
+  .tw textarea::placeholder { color: var(--faint); font-style: italic; }
+  .sb {
+    position: absolute;
+    bottom: .3rem;
+    right: 0;
+    background: transparent;
+    border: none;
+    color: var(--faint);
+    width: 1.8rem;
+    height: 1.8rem;
+    border-radius: 50%;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: .8rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .sb:hover { border-color: var(--text); color: var(--text); }
+
+  .qsec {
+    margin-bottom: 0;
+    padding-top: 1.2rem;
+    border-top: 1px solid var(--border);
+  }
+  .iv-ovw {
+    padding-top: .4rem;
+    border-top: none;
+    margin-bottom: .3rem;
+  }
+  .iv-m {
+    font-size: .5rem;
+    color: var(--faint);
+    font-style: italic;
+    margin-bottom: 0;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+  }
+  .iv-q {
+    font-size: 1.15rem;
+    line-height: 1.5;
+    font-style: italic;
+    margin-bottom: .6rem;
+    max-width: 500px;
+    padding: .4rem 0;
+  }
+  .iv-ovw .tw textarea { min-height: 28px; }
+  .iv-a {
+    display: flex;
+    gap: .5rem;
+    margin-top: .3rem;
+    font-size: .55rem;
+    color: var(--faint);
+    font-style: italic;
+    justify-content: space-between;
+  }
+  .iv-a a {
+    color: var(--dim);
+    cursor: pointer;
+    text-decoration: none;
+    border-bottom: 1px dotted var(--border);
+  }
+  .iv-a a:hover { color: var(--text); }
+
+  .brw { margin-top: 2.5rem; padding-top: 0; }
+  .brw-bar {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    margin-bottom: .8rem;
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    padding: .4rem 0;
+    z-index: 5;
+    border-bottom: none;
+    opacity: .3;
+    transition: opacity .2s;
+  }
+  .brw-bar:hover, .brw-bar:focus-within { opacity: 1; }
+  .brw-bar input {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--border);
+    padding: .35rem 0;
+    color: var(--text);
+    font-family: inherit;
+    font-size: .78rem;
+    font-style: italic;
+    flex: 1;
+    min-width: 80px;
+  }
+  .brw-bar input:focus { outline: none; border-color: var(--text); }
+  .ftag {
+    font-size: .55rem;
+    color: var(--faint);
+    font-style: italic;
+    background: none;
+    padding: 0;
+    white-space: nowrap;
+  }
+
+  .brw-body {
+    font-family: inherit;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-size: .78rem;
+    line-height: 1.45;
+    color: var(--text);
+    font-variant-numeric: oldstyle-nums;
+  }
+  .brw-body .yh {
+    font-size: 1.3rem;
+    font-weight: 400;
+    font-variant: small-caps;
+    letter-spacing: .05em;
+    display: block;
+    margin: 2.5rem 0 .8rem;
+    padding-bottom: 0;
+    border-bottom: none;
+  }
+  .brw-body .yh:first-child { margin-top: 0; }
+  .brw-body .mh {
+    font-size: .92rem;
+    font-style: italic;
+    color: var(--dim);
+    margin-top: 1rem;
+    display: inline-block;
+  }
+  .brw-body .dt {
+    font-size: .72rem;
+    color: var(--faint);
+    font-style: italic;
+    margin-right: .3em;
+  }
+  .brw-body .entry { display: block; margin-bottom: .15rem; }
+  .brw-body .entry.hidden { display: none; }
+  .brw-body mark {
+    background: var(--surface2);
+    color: var(--text);
+    padding: 0 2px;
+  }
+  .brw-body.bg { color: var(--dim); }
+  .brw-body .yh { transition: color .3s; }
+  .brw-body.bg .yh { color: var(--border-strong); }
+
+  /* Random tab */
+  .random-card { max-width: 600px; margin: 2rem auto; }
+  .random-entry {
+    font-size: 1.1rem;
+    line-height: 1.7;
+    font-style: italic;
+    margin-bottom: 1.2rem;
+  }
+  .random-meta {
+    font-size: .72rem;
+    color: var(--dim);
+    margin-bottom: 1.5rem;
+  }
+  .random-next {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--dim);
+    padding: .5rem 1.2rem;
+    font-family: inherit;
+    font-size: .78rem;
+    cursor: pointer;
+    font-style: italic;
+  }
+  .random-next:hover { border-color: var(--text); color: var(--text); }
+
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  .side {
+    border-left: 1px solid var(--border);
+    padding: 1rem .9rem;
+    overflow-y: auto;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow: hidden;
+    transition: padding .4s ease, opacity .4s ease;
+  }
+  .layout.immersive .side {
+    padding: 0;
+    opacity: 0;
+    pointer-events: none;
+    border-left: none;
+  }
+  .ss {
+    margin-bottom: 1.3rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .ss:last-child { border-bottom: none; }
+  .st-side {
+    font-size: .56rem;
+    font-style: italic;
+    letter-spacing: .08em;
+    color: var(--dim);
+    text-transform: lowercase;
+    margin-bottom: .4rem;
+  }
+  .oq {
+    border-left: 2px solid var(--new);
+    padding-left: .7rem;
+    font-size: .8rem;
+    line-height: 1.5;
+    font-style: italic;
+  }
+  .om {
+    font-size: .6rem;
+    color: var(--dim);
+    margin-top: .3rem;
+    padding-left: .7rem;
+    font-style: italic;
+  }
+  .pl { display: flex; flex-direction: column; }
+  .pi {
+    padding: .35rem 0;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    cursor: pointer;
+    transition: background .15s;
+  }
+  .pi:last-child { border-bottom: none; }
+  .pi:hover {
+    background: var(--surface2);
+    margin: 0 -.3rem;
+    padding-left: .3rem;
+    padding-right: .3rem;
+  }
+  .pn { font-size: .82rem; color: var(--text); }
+  .pc {
+    font-size: .62rem;
+    color: var(--faint);
+    font-style: italic;
+    font-variant-numeric: oldstyle-nums tabular-nums;
+  }
+  .gi {
+    padding: .25rem 0;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    font-size: .75rem;
+  }
+  .gi:last-child { border-bottom: none; }
+  .gy { font-variant-numeric: oldstyle-nums; }
+  .gd { color: var(--dim); font-style: italic; font-size: .65rem; }
+  .tc { display: flex; flex-direction: column; gap: .25rem; }
+  .bt {
+    background: transparent;
+    color: var(--dim);
+    border: 1px solid var(--border);
+    padding: .35rem .5rem;
+    font-family: inherit;
+    font-size: .68rem;
+    cursor: pointer;
+    text-align: left;
+    transition: all .15s;
+  }
+  .bt:hover { border-color: var(--text); color: var(--text); }
+  .bt:disabled { opacity: 0.4; cursor: not-allowed; }
+  .bt:disabled:hover { border-color: var(--border); color: var(--dim); }
+
+  .write-mode {
+    display: flex;
+    gap: .6rem;
+    margin-bottom: .3rem;
+    font-size: .52rem;
+    font-style: italic;
+  }
+  .write-mode a {
+    color: var(--faint);
+    cursor: pointer;
+    text-decoration: none;
+    padding-bottom: 1px;
+    border-bottom: 1px solid transparent;
+  }
+  .write-mode a:hover { color: var(--dim); }
+  .write-mode a.active {
+    color: var(--new);
+    border-bottom-color: var(--new);
+  }
+
+  .imm-toggle {
+    position: fixed;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 100;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--dim);
+    width: 24px;
+    height: 48px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: .7rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity .3s;
+  }
+  .imm-toggle:hover { border-color: var(--text); color: var(--text); }
+
+  /* write-mode form containers within overview (inline, not cards) */
+  .qsec .past-inline, .qsec .incoming-inline {
+    display: none;
+    margin-top: .4rem;
+  }
+  .qsec.mode-past .past-inline { display: block; }
+  .qsec.mode-undated .incoming-inline { display: block; }
+  .qsec.mode-now .quick-inline { display: block; }
+  .qsec.mode-past .quick-inline,
+  .qsec.mode-undated .quick-inline { display: none; }
+  .qsec .date-row {
+    display: flex;
+    gap: .3rem;
+    margin-bottom: .3rem;
+    flex-wrap: wrap;
+  }
+  .qsec .date-row input, .qsec .date-row select {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    padding: .3rem .1rem;
+    font-family: inherit;
+    font-size: .78rem;
+    flex: 1;
+    min-width: 70px;
+  }
+  .qsec .date-row input:focus, .qsec .date-row select:focus {
+    outline: none;
+    border-bottom-color: var(--text);
+  }
+  .qsec .preview-inline {
+    font-size: .68rem;
+    color: var(--dim);
+    font-style: italic;
+    margin-top: .3rem;
+    padding: .3rem 0;
+    word-break: break-all;
+  }
+  .qsec .preview-inline .fmt {
+    color: var(--text);
+    font-style: normal;
+  }
 </style>
+<script>
+  (function() {
+    var t = localStorage.getItem('theme');
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  })();
+</script>
 </head>
 <body>
 <div class="wrap">
@@ -1105,6 +1642,7 @@
   </div>
   <div class="version-tag">v2026-04-08.5</div>
   <span class="saved-badge-float" id="savedBadge">· saved</span>
+  <button class="theme-toggle" id="themeToggle" title="Cycle theme: auto → light → dark">auto</button>
 
   <!-- LOAD -->
   <div class="screen active" id="s-load">
@@ -1114,117 +1652,161 @@
     </div>
   </div>
 
-  <!-- OVERVIEW / HOME -->
+  <!-- OVERVIEW / HOME — three-column layout (ported from design 106) -->
   <div class="screen" id="s-overview">
+    <button class="imm-toggle" id="immToggle" title="Toggle sidebar" style="display:none">&lsaquo;</button>
+    <div class="layout" id="ovwLayout">
+      <!-- LEFT: chapter spine -->
+      <div class="chapters" id="chapters">
+        <div class="ch active" data-f="all"><span class="lb">all</span></div>
+        <div class="ch" data-f="baby" data-y="1991-1996"><span class="lb">baby</span><span class="yr">'91-'96</span><div class="dots" data-range="1991-1996"></div></div>
+        <div class="ch" data-f="kid" data-y="1997-2003"><span class="lb">kid</span><span class="yr">'97-'03</span><div class="dots" data-range="1997-2003"></div></div>
+        <div class="ch" data-f="teen" data-y="2004-2009"><span class="lb">teen</span><span class="yr">'04-'09</span><div class="dots" data-range="2004-2009"></div></div>
+        <div class="ch" data-f="young" data-y="2010-2016"><span class="lb">young</span><span class="yr">'10-'16</span><div class="dots" data-range="2010-2016"></div></div>
+        <div class="ch" data-f="adult" data-y="2017-2030"><span class="lb">adult</span><span class="yr">'17-now</span><div class="dots" data-range="2017-2030"></div></div>
+      </div>
 
-    <!-- ZONE 1 (0–100vh): quick entry, alone -->
-    <section class="zone zone-quick">
-      <div class="ta-wrap">
-        <textarea id="quickArea" placeholder="right now…"></textarea>
-        <button class="save-icon" id="quickSave" title="save & download (cmd+enter)">↵</button>
-      </div>
-      <div class="scroll-hint">↓</div>
-    </section>
-
-    <!-- ZONE 2 (100–200vh): the interview -->
-    <section class="zone zone-interview" id="homeInterview">
-      <div class="hi-meta" id="hiMeta"></div>
-      <div class="q-card fade" id="hiCard">
-        <div class="qt" id="hiQuestion"></div>
-      </div>
-      <div class="ta-wrap">
-        <textarea id="hiAnswer" placeholder="…"></textarea>
-        <button class="save-icon" id="hiSave" title="save & next (cmd+enter)">↵</button>
-      </div>
-      <details class="iv-spec" id="hiSpec">
-        <summary>more specific</summary>
-        <div class="date-row">
-          <select id="hiMo">
-            <option value="">— month —</option>
-            <option value="1">Jan</option><option value="2">Feb</option><option value="3">Mar</option>
-            <option value="4">Apr</option><option value="5">May</option><option value="6">Jun</option>
-            <option value="7">Jul</option><option value="8">Aug</option><option value="9">Sep</option>
-            <option value="10">Oct</option><option value="11">Nov</option><option value="12">Dec</option>
-          </select>
-          <input type="number" id="hiDy" placeholder="Day" min="1" max="31">
-          <input type="time" id="hiTm">
+      <!-- CENTER: tabs + write/read/random + browse below -->
+      <div class="center" id="ovwCenter">
+        <div class="tabs-bar">
+          <div class="tab active" data-tab="write">write</div>
+          <div class="tab" data-tab="read">read</div>
+          <div class="tab" data-tab="random">random</div>
         </div>
-      </details>
-      <div class="inline-actions">
-        <a id="hiReroll">different question</a>
-        <span class="sep">·</span>
-        <a id="hiSkip">skip year</a>
-      </div>
-      <div class="scroll-hint">↓</div>
-    </section>
+        <div class="tabs-content">
+          <!-- WRITE PANEL -->
+          <div class="tab-panel active" id="panel-write">
+            <div class="iv-ovw" id="homeInterview">
+              <div class="iv-q" id="hiQuestion"></div>
+              <div class="tw">
+                <textarea id="hiAnswer" placeholder="…"></textarea>
+                <button class="sb" title="save & next (cmd+enter)" id="hiSave">&#x21B5;</button>
+              </div>
+              <div class="iv-a">
+                <span class="iv-m" id="hiMeta"></span>
+                <span style="display:flex;gap:.5rem;align-items:center">
+                  <a id="hiReroll">different question</a>
+                  <span style="color:var(--faint)">&middot;</span>
+                  <a id="hiSkip">skip year</a>
+                  <span style="color:var(--faint)">&middot;</span>
+                  <a id="hiSpecToggle">+ month/day</a>
+                </span>
+              </div>
+              <div class="iv-spec" id="hiSpec" style="display:none">
+                <div class="date-row" style="margin-top:.4rem">
+                  <select id="hiMo">
+                    <option value="">— month —</option>
+                    <option value="1">Jan</option><option value="2">Feb</option><option value="3">Mar</option>
+                    <option value="4">Apr</option><option value="5">May</option><option value="6">Jun</option>
+                    <option value="7">Jul</option><option value="8">Aug</option><option value="9">Sep</option>
+                    <option value="10">Oct</option><option value="11">Nov</option><option value="12">Dec</option>
+                  </select>
+                  <input type="number" id="hiDy" placeholder="Day" min="1" max="31">
+                  <input type="time" id="hiTm">
+                </div>
+              </div>
+            </div>
+            <div class="qsec mode-now" id="qsec">
+              <div class="write-mode">
+                <a class="active" data-wm="now">now</a>
+                <a data-wm="past">past memory</a>
+                <a data-wm="undated">undated</a>
+              </div>
+              <!-- NOW: quick entry -->
+              <div class="quick-inline">
+                <div class="tw">
+                  <textarea id="quickArea" placeholder="what is happening..."></textarea>
+                  <button class="sb" title="save & download (cmd+enter)" id="quickSave">&#x21B5;</button>
+                </div>
+              </div>
+              <!-- PAST MEMORY -->
+              <div class="past-inline">
+                <div class="date-row">
+                  <input type="number" id="pastYr" placeholder="Year" min="1900" max="2100">
+                  <select id="pastMo">
+                    <option value="">— month —</option>
+                    <option value="1">Jan</option><option value="2">Feb</option><option value="3">Mar</option>
+                    <option value="4">Apr</option><option value="5">May</option><option value="6">Jun</option>
+                    <option value="7">Jul</option><option value="8">Aug</option><option value="9">Sep</option>
+                    <option value="10">Oct</option><option value="11">Nov</option><option value="12">Dec</option>
+                  </select>
+                  <input type="number" id="pastDy" placeholder="Day" min="1" max="31">
+                  <input type="time" id="pastTm">
+                </div>
+                <div class="tw">
+                  <textarea id="pastTxt" placeholder="a memory from the past..."></textarea>
+                  <button class="sb" title="save & download" id="pastSave">&#x21B5;</button>
+                </div>
+                <div class="preview-inline" id="pastPrev">enter a year to see preview</div>
+                <button class="bt" id="pastCancel" style="display:none">Cancel</button>
+              </div>
+              <!-- UNDATED -->
+              <div class="incoming-inline">
+                <div class="tw">
+                  <textarea id="incomingTxt" placeholder="a memory without a specific date..."></textarea>
+                  <button class="sb" title="save to INCOMING" id="incomingSave">&#x21B5;</button>
+                </div>
+                <div class="preview-inline">Will be appended to the INCOMING section of your file.</div>
+                <button class="bt" id="incomingCancel" style="display:none">Cancel</button>
+              </div>
+            </div>
+            <!-- Keep #pastShow / #incomingShow around for backward compat (hidden) -->
+            <button id="pastShow" style="display:none"></button>
+            <button id="incomingShow" style="display:none"></button>
+            <!-- Legacy elements still referenced by unchanged JS (hidden) -->
+            <div id="homeDone" style="display:none"></div>
+            <div id="pastForm" style="display:none"></div>
+            <div id="incomingForm" style="display:none"></div>
+            <div id="stats" style="display:none"></div>
+            <div id="timeline" style="display:none"></div>
+            <div id="gapList" style="display:none"></div>
+          </div>
 
-    <section class="zone zone-done" id="homeDone" style="display:none">
-      <p>No entries yet. Write something above to begin.</p>
-      <div class="scroll-hint">↓</div>
-    </section>
+          <!-- RANDOM PANEL -->
+          <div class="tab-panel" id="panel-random">
+            <div class="random-card">
+              <div class="random-entry" id="randEntry"></div>
+              <div class="random-meta" id="randMeta"></div>
+              <button class="random-next" id="randNext">next random entry</button>
+            </div>
+          </div>
 
-    <!-- BELOW THE FOLD: stats, timeline, photos, past/undated, memory of the day, etc. -->
-    <div class="home-below">
-      <div class="otd" id="onThisDay" style="display:none">
-        <div class="ql"><span id="otdLabel">on this day</span> <span id="otdDate"></span> <a id="otdRefresh" class="otd-refresh" style="display:none">↻ another</a></div>
-        <div id="otdEntries"></div>
-      </div>
-
-      <div class="secondary-btns">
-        <button class="btn dashed" id="pastShow">+ past memory</button>
-        <button class="btn dashed" id="incomingShow">+ undated memory</button>
-      </div>
-
-      <div class="past incoming" id="incomingForm" style="display:none">
-        <div class="ql">undated memory</div>
-        <textarea id="incomingTxt" placeholder="A memory without a specific date. Goes to the INCOMING section."></textarea>
-        <div class="hint">Will be appended to the INCOMING section at the top of your file.</div>
-        <div class="btns">
-          <button class="btn" id="incomingSave">Save & Download</button>
-          <button class="btn sec" id="incomingCancel">Cancel</button>
+          <!-- BROWSE (always in DOM, dimmed when not on read tab) -->
+          <div class="brw" id="brw">
+            <div class="brw-bar">
+              <input type="search" placeholder="search entries..." id="brwSearch">
+              <span class="ftag" id="ftag">all</span>
+            </div>
+            <div class="brw-body" id="brwBody"></div>
+          </div>
         </div>
       </div>
 
-      <div class="past" id="pastForm" style="display:none">
-        <div class="ql">past memory</div>
-        <div class="date-row">
-          <input type="number" id="pastYr" placeholder="Year" min="1900" max="2100">
-          <select id="pastMo">
-            <option value="">— month —</option>
-            <option value="1">Jan</option><option value="2">Feb</option><option value="3">Mar</option>
-            <option value="4">Apr</option><option value="5">May</option><option value="6">Jun</option>
-            <option value="7">Jul</option><option value="8">Aug</option><option value="9">Sep</option>
-            <option value="10">Oct</option><option value="11">Nov</option><option value="12">Dec</option>
-          </select>
-          <input type="number" id="pastDy" placeholder="Day" min="1" max="31">
-          <input type="time" id="pastTm">
+      <!-- RIGHT: sidebar -->
+      <div class="side" id="ovwSide">
+        <div class="ss" id="otdSide">
+          <div class="st-side"><span id="otdLabel">on this day</span> <span id="otdDate"></span> <a id="otdRefresh" class="otd-refresh" style="display:none;cursor:pointer">&#8635; another</a></div>
+          <div id="otdEntries"></div>
         </div>
-        <textarea id="pastTxt" placeholder="What's the memory?"></textarea>
-        <div class="preview" id="pastPrev">enter a year to see preview</div>
-        <div class="btns">
-          <button class="btn" id="pastSave">Save & Download</button>
-          <button class="btn sec" id="pastCancel">Cancel</button>
+        <div class="ss" id="peopleSide">
+          <div class="st-side">people</div>
+          <div class="pl" id="peopleList"></div>
         </div>
-      </div>
-
-      <div class="stats" id="stats"></div>
-      <div class="tl-wrap">
-        <div class="legend">
-          <span><i style="background:var(--cov);border-color:var(--cov)"></i>covered</span>
-          <span><i></i>empty</span>
-          <span><i style="background:var(--new);border-color:var(--new)"></i>added this session</span>
+        <div class="ss" id="gapsSide">
+          <div class="st-side">blind spots</div>
+          <div id="gapsSideList"></div>
         </div>
-        <div id="timeline"></div>
-      </div>
-      <h3>Blind spots (longest first)</h3>
-      <div id="gapList"></div>
-      <div class="toolbar">
-        <button class="btn sec" id="incomingIvBtn">Process incoming</button>
-        <button class="btn sec" id="photosBtn">Photos</button>
-        <button class="btn sec" id="browseBtn">Browse</button>
-        <button class="btn sec" id="statsBtn">Stats</button>
-        <button class="btn sec" id="exportBtn">Download .txt</button>
-        <button class="btn sec sm" id="loadDiffBtn">Load different file</button>
+        <div class="ss">
+          <div class="st-side">tools</div>
+          <div class="tc">
+            <button class="bt" id="incomingIvBtn">Process incoming</button>
+            <button class="bt" id="photosBtn">Photos</button>
+            <button class="bt" id="browseBtn">Browse</button>
+            <button class="bt" id="statsBtn">Stats</button>
+            <button class="bt" id="exportBtn">Download .txt</button>
+            <button class="bt" id="loadDiffBtn">Load different file</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -1233,6 +1815,7 @@
   <div class="screen" id="s-viewer">
     <div class="viewer-nav">
       <button class="btn sec sm" id="viewerBack">← back</button>
+      <button class="btn sec sm edit-toggle" id="editToggle">edit</button>
       <input class="viewer-search" id="viewerSearch" type="search" placeholder="search entries...">
       <div class="year-jump" id="yearJump"></div>
     </div>
@@ -1505,10 +2088,43 @@ function insertInMonthSection(text, year, month, day, hour, min, entryText) {
   );
   const moMatch = text.match(moRe);
   if (moMatch) {
-    const idx = text.indexOf(moMatch[0]);
-    const nlIdx = text.indexOf('\n', idx);
-    if (nlIdx !== -1) return text.slice(0, nlIdx + 1) + entry + '\n' + text.slice(nlIdx + 1);
-    return text + '\n' + entry + '\n';
+    const headerStart = text.indexOf(moMatch[0]);
+    const nlIdx = text.indexOf('\n', headerStart);
+    if (nlIdx === -1) return text + '\n' + entry + '\n';
+
+    // Find sorted insertion point (descending by day+time within month)
+    const newKey = day * 10000 + (hour || 0) * 100 + (min || 0);
+    const afterHeader = nlIdx + 1;
+    const rest = text.slice(afterHeader);
+    const rLines = rest.split('\n');
+    const mp2 = Object.keys(MM).join('|');
+    const secEndRe = new RegExp(
+      `^(=+\\s*(\\d{4}|pre\\s+\\d{4}|INCOMING:?)\\s*=*|(${mp2})\\s*['\\u2018\\u2019\\u201A\\u201C\\u201D]?\\s*\\d{0,4}\\s*=+)`, 'i'
+    );
+    let co = 0, ce = 0, bl = 0;
+    for (let i = 0; i < rLines.length; i++) {
+      const ls = co;
+      co += rLines[i].length + 1;
+      const l = rLines[i].trim();
+      if (!l) { bl++; if (bl >= 2) break; continue; }
+      bl = 0;
+      if (secEndRe.test(l)) break;
+      ce = co;
+      let lk = null, m2;
+      m2 = l.match(/^(\d{2})(\d{2})(\d{2})[.: ]/);
+      if (m2 && +m2[1] >= 1 && +m2[1] <= 31 && +m2[2] <= 23 && +m2[3] <= 59) {
+        lk = +m2[1] * 10000 + +m2[2] * 100 + +m2[3];
+      } else {
+        m2 = l.match(/^(\d{1,2})(?:st|nd|rd|th)/i);
+        if (m2 && +m2[1] >= 1 && +m2[1] <= 31) lk = +m2[1] * 10000;
+      }
+      if (lk !== null && newKey >= lk) {
+        return text.slice(0, afterHeader + ls) + entry + '\n' + text.slice(afterHeader + ls);
+      }
+    }
+    // New entry is older than all existing; append after section content
+    const pos = afterHeader + ce;
+    return text.slice(0, pos) + entry + '\n' + text.slice(pos);
   }
 
   // Find year header and create month section
@@ -1537,16 +2153,50 @@ function ordSuf(n) {
   return ({ 1: 'st', 2: 'nd', 3: 'rd' })[n % 10] || 'th';
 }
 
-// Insert a formatted entry into the "pre YYYY" block (right after the header).
+// Insert a formatted entry into the "pre YYYY" block in sorted position (descending by date).
 function insertInPreBlock(text, formattedEntry) {
+  function preSortKey(line) {
+    const m = line.trim().match(/^(\d+)/);
+    if (!m || m[1].length < 4) return null;
+    const yr = parseInt(m[1].slice(0, 4));
+    if (yr < 1900 || yr > 2100) return null;
+    return Number((m[1] + '000000000000').slice(0, 12));
+  }
+
   const preRe = /^=+\s*pre\s+\d{4}.*$/m;
   const preM = text.match(preRe);
   if (preM) {
     const idx = text.indexOf(preM[0]);
     const nlIdx = text.indexOf('\n', idx);
-    if (nlIdx !== -1) {
-      return text.slice(0, nlIdx + 1) + '\n' + formattedEntry + '\n' + text.slice(nlIdx + 1);
+    if (nlIdx === -1) return text + '\n\n' + formattedEntry + '\n';
+
+    const newKey = preSortKey(formattedEntry);
+    if (newKey != null) {
+      const afterHeader = nlIdx + 1;
+      const rest = text.slice(afterHeader);
+      const lines = rest.split('\n');
+      let co = 0, ce = 0;
+      for (let i = 0; i < lines.length; i++) {
+        const ls = co;
+        co += lines[i].length + 1;
+        const l = lines[i].trim();
+        if (!l) continue;
+        const lk = preSortKey(l);
+        if (lk !== null) {
+          ce = co;
+          if (newKey >= lk) {
+            const pos = afterHeader + ls;
+            return text.slice(0, pos) + formattedEntry + '\n\n' + text.slice(pos);
+          }
+        }
+      }
+      if (ce > 0) {
+        const pos = afterHeader + ce;
+        return text.slice(0, pos) + '\n' + formattedEntry + '\n' + text.slice(pos);
+      }
     }
+    // Fallback: insert right after header
+    return text.slice(0, nlIdx + 1) + '\n' + formattedEntry + '\n' + text.slice(nlIdx + 1);
   }
   // fallback: append to end
   return text.trimEnd() + '\n\n' + formattedEntry + '\n';
@@ -1778,6 +2428,9 @@ const QBank = {
     "Close your eyes. You're {age}. What feels safe in your body right now? What's tight, warm, soft?",
     "Even just one image from {year} — a face, a corner of a room, a color. What surfaces?",
     "If you asked your mom about {year}, what would she say you were like? (You can actually ask her.)",
+    "What animal fascinated or terrified you at age {age}?",
+    "What did bathtime feel like in {year}? Was it fun, scary, warm, loud?",
+    "You're {age}. What sound means someone you love is nearby?",
   ],
   kid: [
     "It's {year}, you're {age}. What's on TV after school?",
@@ -1798,6 +2451,11 @@ const QBank = {
     "Tell your grandkids what being {age} in {year} actually felt like — what was a normal day?",
     "Is there anything from age {age} you've never told anyone but always remembered?",
     "If {year} is a chapter in the book of your life, what's the chapter title?",
+    "What's the most dangerous thing you did at age {age} that your parents never found out about?",
+    "What did recess smell like in {year}? Grass? Asphalt? Cafeteria? Rain?",
+    "You're {age}. What do you think adults do all day? What seems mysterious about their world?",
+    "What did you collect at age {age}? Cards, bugs, rocks, stickers, secrets?",
+    "What's the first time you realized your parents were just regular people?",
   ],
   teen: [
     "It's {year}. What song is stuck in your head on repeat?",
@@ -1824,6 +2482,13 @@ const QBank = {
     "Tell your grandkids what being {age} in {year} felt like — what were you obsessed with?",
     "If your life is a book, what's the chapter title for {year}?",
     "Is there anything from {year} you've never told anyone but want to tell now?",
+    "What's the most money you ever held at once at age {age}? How did it feel?",
+    "What was your screen name, avatar, or online identity in {year}?",
+    "What band or artist did you pretend to like in {year} just to fit in?",
+    "What rule did you break at age {age} that actually felt worth it?",
+    "You're {age}. What do you overhear that changes how you see someone?",
+    "What's the lie you told most often at age {age}?",
+    "What smell instantly takes you back to {year}? A deodorant, a hallway, someone's car?",
   ],
   young: [
     "It's {year}, you're {age}. What's your morning look like? Where do you wake up?",
@@ -1849,6 +2514,13 @@ const QBank = {
     "What turning point happened in {year}, even if you didn't notice it then?",
     "If your life is a book, what's the chapter title for {year}?",
     "Is there anything from {year} you've never told anyone but want to tell now?",
+    "What did you romanticize in {year} that turned out to be boring or overrated?",
+    "What's the worst advice you followed around age {age}?",
+    "What city could you have ended up in around {year} but didn't? What pulled you elsewhere?",
+    "You're {age}. What did you eat when no one was watching?",
+    "What was your relationship to your body at age {age}? Did you like what you saw?",
+    "What's the longest you went without talking to another person around {year}? How did it feel?",
+    "What did you do at age {age} purely to impress someone? Did it work?",
   ],
   adult: [
     "It's {year}, age {age}. Walk me through a random Tuesday.",
@@ -1873,6 +2545,15 @@ const QBank = {
     "What turning point happened in {year}, even if you didn't notice it then?",
     "If your life is a book, what's {year}'s chapter title?",
     "Is there anything from {year} you've never told anyone but want to tell now?",
+    "What comfort have you stopped justifying in {year}? What do you just let yourself have now?",
+    "What's something you've gotten worse at since age {age}? Something that used to come easy?",
+    "What's the quietest moment you can remember from {year}?",
+    "If someone followed you with a camera in {year}, what would bore them most?",
+    "What's something you now pay for that you used to do yourself? How does that feel?",
+    "What would your 16-year-old self think about your life in {year}?",
+    "What conversation are you avoiding in {year}?",
+    "You're {age}. What's the most mundane thing that secretly makes you happy?",
+    "What's a strong opinion you held at age {age} that you can't even remember the logic behind now?",
   ],
 };
 const usedQ = new Set();
@@ -1905,11 +2586,13 @@ function guardWriteCheck(oldText, newText, expectedDelta) {
     if (expectedDelta >= 0 && newText.length < oldText.length) {
       return { ok: false, reason: `text shrank (${oldText.length} → ${newText.length} bytes)` };
     }
-    // Every significant line in old must survive
-    const oldLines = oldText.split('\n').map(l => l.trim()).filter(l => l.length > 20);
-    for (const line of oldLines) {
-      if (!newText.includes(line)) {
-        return { ok: false, reason: `line missing: "${line.slice(0, 50)}..."` };
+    // Every significant line in old must survive (skip for intentional deletions)
+    if (expectedDelta >= 0) {
+      const oldLines = oldText.split('\n').map(l => l.trim()).filter(l => l.length > 20);
+      for (const line of oldLines) {
+        if (!newText.includes(line)) {
+          return { ok: false, reason: `line missing: "${line.slice(0, 50)}..."` };
+        }
       }
     }
     return { ok: true, reason: 'ok' };
@@ -2023,6 +2706,14 @@ function refresh() {
 function show(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById('s-' + id).classList.add('active');
+  // Toggle the fullscreen three-column body layout only on overview
+  if (document.body) {
+    if (id === 'overview') document.body.classList.add('overview-active');
+    else document.body.classList.remove('overview-active');
+  }
+  // Show the immersive toggle only on overview
+  const imm = document.getElementById('immToggle');
+  if (imm) imm.style.display = id === 'overview' ? '' : 'none';
 }
 
 function download() {
@@ -2043,11 +2734,15 @@ function updateBelowFold() {
   const now = new Date().getFullYear();
   const total = now - BIRTH + 1;
 
-  document.getElementById('stats').innerHTML = `
-    <div class="st"><div class="v">${entries.length}</div><div class="l">entries</div></div>
-    <div class="st"><div class="v">${covYrs.size}/${total}</div><div class="l">years</div></div>
-    <div class="st"><div class="v">${gaps.reduce((s,g)=>s+g.d,0)}</div><div class="l">blind spot yrs</div></div>
-    <div class="st"><div class="v">${S.sessionYears.size}</div><div class="l">added</div></div>`;
+  // Legacy (hidden) containers — kept for backward compat with tests & tools
+  const statsEl = document.getElementById('stats');
+  if (statsEl) {
+    statsEl.innerHTML = `
+      <div class="st"><div class="v">${entries.length}</div><div class="l">entries</div></div>
+      <div class="st"><div class="v">${covYrs.size}/${total}</div><div class="l">years</div></div>
+      <div class="st"><div class="v">${gaps.reduce((s,g)=>s+g.d,0)}</div><div class="l">blind spot yrs</div></div>
+      <div class="st"><div class="v">${S.sessionYears.size}</div><div class="l">added</div></div>`;
+  }
 
   let h = '<div class="tl-grid">';
   for (let y = BIRTH; y <= now; y++) {
@@ -2059,7 +2754,8 @@ function updateBelowFold() {
   for (let y = BIRTH; y <= now; y++)
     h += `<div class="tl-lbl">${y % 5 === 0 ? "'" + String(y).slice(2) : ''}</div>`;
   h += '</div>';
-  document.getElementById('timeline').innerHTML = h;
+  const tlEl = document.getElementById('timeline');
+  if (tlEl) tlEl.innerHTML = h;
 
   let gl = '';
   if (gaps.length === 0) {
@@ -2072,14 +2768,58 @@ function updateBelowFold() {
       gl += `<div class="gap-item"><div><div class="yrs">${lbl}</div><div class="meta">${albl}</div></div><div class="dur">${g.d} yr${g.d>1?'s':''}</div></div>`;
     }
   }
-  document.getElementById('gapList').innerHTML = gl;
+  const glEl = document.getElementById('gapList');
+  if (glEl) glEl.innerHTML = gl;
+
+  // Sidebar: blind spots (top 4)
+  const gapsSideList = document.getElementById('gapsSideList');
+  if (gapsSideList) {
+    if (gaps.length === 0) {
+      gapsSideList.innerHTML = '<div style="color:var(--dim);font-style:italic;font-size:.7rem">every year covered</div>';
+    } else {
+      let sgh = '';
+      for (const g of gaps.slice(0, 6)) {
+        const lbl = g.s === g.e ? `${g.s}` : `${g.s}\u2013${g.e}`;
+        sgh += `<div class="gi"><span class="gy">${lbl}</span><span class="gd">${g.d} yr${g.d>1?'s':''}</span></div>`;
+      }
+      gapsSideList.innerHTML = sgh;
+    }
+  }
+
+  // Sidebar: people (real data from stats)
+  const peopleList = document.getElementById('peopleList');
+  if (peopleList) {
+    const stats = computeStats(S.text);
+    let ph = '';
+    for (const [name, cnt] of stats.topPeople.slice(0, 8)) {
+      ph += `<div class="pi" data-person="${escHtml(name)}"><span class="pn">${escHtml(name)}</span><span class="pc">${cnt}</span></div>`;
+    }
+    if (!ph) ph = '<div style="color:var(--dim);font-style:italic;font-size:.7rem">no names detected yet</div>';
+    peopleList.innerHTML = ph;
+  }
+
+  // Chapter dots reflect coverage (one dot per year in the range)
+  document.querySelectorAll('#chapters .dots[data-range]').forEach(dotsEl => {
+    const [lo, hi] = dotsEl.dataset.range.split('-').map(Number);
+    const nowY = new Date().getFullYear();
+    const endY = Math.min(hi, nowY);
+    let dh = '';
+    for (let y = lo; y <= endY; y++) {
+      let cls = 'd';
+      if (!covYrs.has(y)) cls += ' e';
+      dh += `<span class="${cls}"></span>`;
+    }
+    dotsEl.innerHTML = dh;
+  });
 
   // Show incoming count
   const iiCount = getIncomingItems(S.text).length;
   const iiBtn = document.getElementById('incomingIvBtn');
-  iiBtn.textContent = iiCount > 0 ? `Process incoming (${iiCount})` : 'Process incoming';
-  iiBtn.disabled = iiCount === 0;
-  iiBtn.style.opacity = iiCount === 0 ? '0.4' : '1';
+  if (iiBtn) {
+    iiBtn.textContent = iiCount > 0 ? `Process incoming (${iiCount})` : 'Process incoming';
+    iiBtn.disabled = iiCount === 0;
+    iiBtn.style.opacity = iiCount === 0 ? '0.4' : '1';
+  }
 
   renderOnThisDay();
 }
@@ -2090,9 +2830,13 @@ function updateBelowFold() {
 function overview() {
   refresh();
   updateBelowFold();
-  document.getElementById('quickArea').value = '';
+  const qa = document.getElementById('quickArea');
+  if (qa) qa.value = '';
   renderHomeInterview(true);
+  renderBrowse();
   show('overview');
+  // Reset tab/filter state
+  if (typeof switchOvwTab === 'function') switchOvwTab(curOvwTab || 'write');
 }
 
 // ── quick now entry ──
@@ -2173,6 +2917,8 @@ function incomingSaveFn() {
 function escHtml(s) {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
+
+let viewerEditing = false;
 
 function renderViewer(searchTerm) {
   const q = (searchTerm || '').trim().toLowerCase();
@@ -2264,7 +3010,42 @@ function renderViewer(searchTerm) {
   });
 }
 
+function enterEditMode() {
+  viewerEditing = true;
+  const vc = document.getElementById('viewerContent');
+  const btn = document.getElementById('editToggle');
+  btn.classList.add('active');
+  btn.textContent = 'done';
+  // Replace rendered HTML with plain text for editing
+  vc.textContent = S.text;
+  vc.contentEditable = 'true';
+  vc.classList.add('editing');
+  vc.focus();
+}
+
+function exitEditMode() {
+  viewerEditing = false;
+  const vc = document.getElementById('viewerContent');
+  const btn = document.getElementById('editToggle');
+  btn.classList.remove('active');
+  btn.textContent = 'edit';
+  // Grab edited plain text and commit
+  const newText = vc.innerText;
+  vc.contentEditable = 'false';
+  vc.classList.remove('editing');
+  if (newText !== S.text) {
+    if (!commitText(newText, -1, 'Manual edit')) return;
+    refresh();
+    download();
+    toast('Saved & downloaded');
+  }
+  renderViewer();
+}
+
 function openViewer() {
+  viewerEditing = false;
+  document.getElementById('editToggle').classList.remove('active');
+  document.getElementById('editToggle').textContent = 'edit';
   renderViewer();
   show('viewer');
   window.scrollTo(0, 0);
@@ -2278,45 +3059,54 @@ function renderOnThisDay() {
   const month = now.getMonth() + 1;
   const day = now.getDate();
   const matches = getOnThisDay(S.entries, month, day);
-  const el = document.getElementById('onThisDay');
+  const el = document.getElementById('onThisDay'); // legacy wrapper (may be absent)
+  const sideWrap = document.getElementById('otdSide'); // new sidebar wrapper
   const labelEl = document.getElementById('otdLabel');
   const dateEl = document.getElementById('otdDate');
   const refreshEl = document.getElementById('otdRefresh');
+  const entriesEl = document.getElementById('otdEntries');
+  if (!entriesEl) return;
+
+  function setVisible(visible) {
+    if (el) el.style.display = visible ? 'block' : 'none';
+    if (sideWrap) sideWrap.style.display = visible ? '' : 'none';
+  }
 
   if (matches.length > 0) {
-    labelEl.textContent = 'on this day';
-    dateEl.textContent = `(${FULL_MO[month]} ${day})`;
-    refreshEl.style.display = 'none';
+    if (labelEl) labelEl.textContent = 'on this day';
+    if (dateEl) dateEl.textContent = `(${FULL_MO[month]} ${day})`;
+    if (refreshEl) refreshEl.style.display = 'none';
     let html = '';
     const curYear = now.getFullYear();
-    for (const m of matches) {
+    // In the sidebar, we only show the most recent match to keep it compact.
+    const top = matches.slice(0, 1);
+    for (const m of top) {
       const yearsAgo = curYear - m.year;
       const agoLabel = yearsAgo === 0 ? 'today' : yearsAgo === 1 ? '1 year ago' : `${yearsAgo} years ago`;
       const txt = (m.text || '').substring(0, 300);
       const tr = (m.text || '').length > 300 ? '…' : '';
-      html += `<div class="otd-entry"><span class="year">${m.year}</span>${escHtml(txt)}${tr}<span class="ago">${agoLabel}</span></div>`;
+      html += `<div class="oq">${escHtml(txt)}${tr}</div><div class="om">${m.year} &middot; ${agoLabel}</div>`;
     }
-    document.getElementById('otdEntries').innerHTML = html;
-    el.style.display = 'block';
+    entriesEl.innerHTML = html;
+    setVisible(true);
     return;
   }
 
   // Fallback: random memory
   const r = getRandomEntry(S.entries);
-  if (!r) { el.style.display = 'none'; return; }
-  labelEl.textContent = 'a memory';
-  // build a date label from what's available
+  if (!r) { setVisible(false); return; }
+  if (labelEl) labelEl.textContent = 'a memory';
   let dateLabel = String(r.year);
   if (r.month) dateLabel = `${FULL_MO[r.month]} ${r.year}`;
   if (r.month && r.day) dateLabel = `${FULL_MO[r.month]} ${r.day}, ${r.year}`;
-  dateEl.textContent = `(${dateLabel})`;
-  refreshEl.style.display = 'inline';
+  if (dateEl) dateEl.textContent = `(${dateLabel})`;
+  if (refreshEl) refreshEl.style.display = 'inline';
   const txt = (r.text || '').substring(0, 400);
   const tr = (r.text || '').length > 400 ? '…' : '';
   const ageLabel = `age ${r.year - BIRTH}`;
-  document.getElementById('otdEntries').innerHTML =
-    `<div class="otd-entry"><span class="year">${r.year}</span>${escHtml(txt)}${tr}<span class="ago">${ageLabel}</span></div>`;
-  el.style.display = 'block';
+  entriesEl.innerHTML =
+    `<div class="oq">${escHtml(txt)}${tr}</div><div class="om">${r.year} &middot; ${ageLabel}</div>`;
+  setVisible(true);
 }
 
 // ── stats dashboard ──
@@ -2769,7 +3559,7 @@ function renderHomeInterview(newQuestion) {
   if (newQuestion !== false) {
     document.getElementById('hiQuestion').textContent = getQ(year);
     const c = document.getElementById('hiCard');
-    c.classList.remove('fade'); void c.offsetWidth; c.classList.add('fade');
+    if (c) { c.classList.remove('fade'); void c.offsetWidth; c.classList.add('fade'); }
   }
 
   document.getElementById('hiAnswer').value = '';
@@ -2839,6 +3629,246 @@ function loadFile(f) {
   r.readAsText(f);
 }
 
+// ── three-column overview: chapter filter, tabs, browse, immersive ──
+const OVW_RANGES = {
+  all:   [BIRTH, 2030],
+  baby:  [1991, 1996],
+  kid:   [1997, 2003],
+  teen:  [2004, 2009],
+  young: [2010, 2016],
+  adult: [2017, 2030],
+};
+let curOvwFilter = 'all';
+let curOvwTab = 'write';
+
+// Render the browse pane using S.entries (filtered by chapter + search).
+function renderBrowse(search) {
+  const body = document.getElementById('brwBody');
+  if (!body) return;
+  const range = OVW_RANGES[curOvwFilter] || OVW_RANGES.all;
+  const lo = range[0], hi = range[1];
+  const q = (search || '').toLowerCase();
+  let filtered = S.entries.filter(e => e.year != null && e.year >= lo && e.year <= hi);
+  if (q) filtered = filtered.filter(e => (e.text || '').toLowerCase().indexOf(q) !== -1);
+
+  // Group by year (desc), then month (desc)
+  const groups = {};
+  for (const e of filtered) {
+    if (!groups[e.year]) groups[e.year] = [];
+    groups[e.year].push(e);
+  }
+  const years = Object.keys(groups).map(Number).sort((a, b) => b - a);
+
+  let html = '';
+  for (const y of years) {
+    html += `<span class="yh">${y}</span>\n`;
+    const byM = {};
+    for (const en of groups[y]) {
+      const mk = en.month || 0;
+      if (!byM[mk]) byM[mk] = [];
+      byM[mk].push(en);
+    }
+    const months = Object.keys(byM).map(Number).sort((a, b) => b - a);
+    for (const mo of months) {
+      if (mo > 0) {
+        html += `<span class="mh">${FULL_MO[mo]} '${String(y).slice(2)}</span>\n`;
+      }
+      // sort entries within month by day desc, then hour/min desc
+      byM[mo].sort((a, b) => {
+        const ad = (a.day || 0) * 10000 + (a.hour || 0) * 100 + (a.minute || 0);
+        const bd = (b.day || 0) * 10000 + (b.hour || 0) * 100 + (b.minute || 0);
+        return bd - ad;
+      });
+      for (const en of byM[mo]) {
+        let dt;
+        if (en.day != null && en.hour != null && en.minute != null) {
+          dt = `${pad2(en.day)} ${pad2(en.hour)}:${pad2(en.minute)}`;
+        } else if (en.day != null) {
+          dt = `${en.day}${ordSuf(en.day)}`;
+        } else if (en.month) {
+          dt = `${FULL_MO[en.month]}`;
+        } else {
+          dt = `${en.year} ish`;
+        }
+        let esc = escHtml(String(en.text || ''));
+        if (q) {
+          const re = new RegExp('(' + q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
+          esc = esc.replace(re, '<mark>$1</mark>');
+        }
+        html += `<span class="entry"><span class="dt">${dt}:</span> ${esc}</span>\n`;
+      }
+    }
+  }
+  if (!html) html = '<span style="color:var(--dim);font-style:italic">no entries for this period</span>';
+  body.innerHTML = html;
+}
+
+function switchOvwTab(tabName) {
+  curOvwTab = tabName;
+  document.querySelectorAll('#s-overview .tab').forEach(t => t.classList.remove('active'));
+  const tabEl = document.querySelector('#s-overview .tab[data-tab="' + tabName + '"]');
+  if (tabEl) tabEl.classList.add('active');
+  document.querySelectorAll('#s-overview .tab-panel').forEach(p => p.classList.remove('active'));
+  if (tabName === 'write') {
+    const w = document.getElementById('panel-write');
+    if (w) w.classList.add('active');
+  } else if (tabName === 'random') {
+    const r = document.getElementById('panel-random');
+    if (r) r.classList.add('active');
+    showRandomEntry();
+  }
+  // Read tab: no panel active — browse handles the full center.
+  // For read tab, go immersive and scroll center to browse.
+  if (tabName === 'read') {
+    updateImmersiveOvw(true);
+    renderBrowse();
+    // scroll center so browse is visible
+    const center = document.getElementById('ovwCenter');
+    const brw = document.getElementById('brw');
+    if (center && brw) {
+      setTimeout(() => { brw.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 0);
+    }
+    const body = document.getElementById('brwBody');
+    if (body) body.classList.remove('bg');
+  } else {
+    updateImmersiveOvw(false);
+    const body = document.getElementById('brwBody');
+    if (body) body.classList.add('bg');
+  }
+}
+
+// Random entry tab
+function showRandomEntry() {
+  const r = getRandomEntry(S.entries);
+  const entEl = document.getElementById('randEntry');
+  const metaEl = document.getElementById('randMeta');
+  if (!entEl || !metaEl) return;
+  if (!r) {
+    entEl.textContent = 'no entries yet';
+    metaEl.textContent = '';
+    return;
+  }
+  entEl.textContent = r.text || '';
+  let dateLabel = String(r.year);
+  if (r.month) dateLabel = `${FULL_MO[r.month]} ${r.year}`;
+  if (r.month && r.day) dateLabel = `${FULL_MO[r.month]} ${r.day}, ${r.year}`;
+  if (r.hour != null && r.minute != null) dateLabel += ` · ${pad2(r.hour)}:${pad2(r.minute)}`;
+  metaEl.textContent = `${dateLabel} · age ${r.year - BIRTH}`;
+}
+
+// Immersive mode for overview
+let ovwImmersive = false;
+function updateImmersiveOvw(force) {
+  if (typeof force === 'boolean') ovwImmersive = force;
+  const layout = document.getElementById('ovwLayout');
+  const btn = document.getElementById('immToggle');
+  if (!layout) return;
+  if (ovwImmersive) {
+    layout.classList.add('immersive');
+    if (btn) btn.innerHTML = '&rsaquo;';
+  } else {
+    layout.classList.remove('immersive');
+    if (btn) btn.innerHTML = '&lsaquo;';
+  }
+}
+
+// Wire up chapter clicks once
+document.querySelectorAll('#chapters .ch').forEach(ch => {
+  ch.addEventListener('click', () => {
+    document.querySelectorAll('#chapters .ch').forEach(c => c.classList.remove('active'));
+    ch.classList.add('active');
+    curOvwFilter = ch.dataset.f;
+    const ftag = document.getElementById('ftag');
+    if (ftag) ftag.textContent = curOvwFilter;
+    const brwSearch = document.getElementById('brwSearch');
+    if (brwSearch) brwSearch.value = '';
+    // Switch to read tab so the user can see the filter result
+    switchOvwTab('read');
+  });
+});
+
+// Wire up tab clicks
+document.querySelectorAll('#s-overview .tab').forEach(tab => {
+  tab.addEventListener('click', () => switchOvwTab(tab.dataset.tab));
+});
+
+// Wire up browse search
+let brwSearchTimer;
+const brwSearchEl = document.getElementById('brwSearch');
+if (brwSearchEl) {
+  brwSearchEl.addEventListener('input', e => {
+    clearTimeout(brwSearchTimer);
+    brwSearchTimer = setTimeout(() => renderBrowse(e.target.value), 150);
+  });
+}
+
+// Wire up write-mode toggle (now / past memory / undated)
+const qsecEl = document.getElementById('qsec');
+document.querySelectorAll('#qsec .write-mode a').forEach(a => {
+  a.addEventListener('click', () => {
+    document.querySelectorAll('#qsec .write-mode a').forEach(l => l.classList.remove('active'));
+    a.classList.add('active');
+    const m = a.dataset.wm;
+    if (!qsecEl) return;
+    qsecEl.classList.remove('mode-now', 'mode-past', 'mode-undated');
+    qsecEl.classList.add('mode-' + m);
+    // Focus the active textarea
+    let ta;
+    if (m === 'now') ta = document.getElementById('quickArea');
+    else if (m === 'past') ta = document.getElementById('pastYr');
+    else if (m === 'undated') ta = document.getElementById('incomingTxt');
+    if (ta && ta.focus) ta.focus();
+  });
+});
+
+// Wire up interview "+ month/day" toggle
+const hiSpecToggle = document.getElementById('hiSpecToggle');
+if (hiSpecToggle) {
+  hiSpecToggle.addEventListener('click', e => {
+    e.preventDefault();
+    const spec = document.getElementById('hiSpec');
+    if (!spec) return;
+    const isOpen = spec.style.display === 'block';
+    spec.style.display = isOpen ? 'none' : 'block';
+  });
+}
+
+// Wire up immersive toggle button
+const immBtnEl = document.getElementById('immToggle');
+if (immBtnEl) {
+  immBtnEl.addEventListener('click', () => {
+    ovwImmersive = !ovwImmersive;
+    updateImmersiveOvw();
+  });
+}
+
+// Wire up center-pane scroll: dim/undim browse when it enters view
+const ovwCenterEl = document.getElementById('ovwCenter');
+if (ovwCenterEl) {
+  ovwCenterEl.addEventListener('scroll', () => {
+    const brw = document.getElementById('brw');
+    const body = document.getElementById('brwBody');
+    if (!brw || !body) return;
+    const bt = brw.getBoundingClientRect().top;
+    const ct = ovwCenterEl.getBoundingClientRect().top;
+    if (bt - ct < 180) body.classList.remove('bg');
+    else body.classList.add('bg');
+  });
+}
+
+// Wire up people sidebar clicks — go to person profile screen
+const peopleListEl = document.getElementById('peopleList');
+if (peopleListEl) {
+  peopleListEl.addEventListener('click', e => {
+    const pi = e.target.closest('.pi');
+    if (pi && pi.dataset.person) openPerson(pi.dataset.person);
+  });
+}
+
+// Wire up random "next" button
+const randNextBtn = document.getElementById('randNext');
+if (randNextBtn) randNextBtn.addEventListener('click', showRandomEntry);
+
 // ── event listeners ──
 document.getElementById('exportBtn').addEventListener('click', () => { download(); toast('Downloaded'); });
 document.getElementById('quickSave').addEventListener('click', quickSave);
@@ -2861,8 +3891,25 @@ document.getElementById('loadDiffBtn').addEventListener('click', () => {
 
 // viewer
 document.getElementById('browseBtn').addEventListener('click', openViewer);
-document.getElementById('viewerBack').addEventListener('click', overview);
-document.getElementById('viewerSearch').addEventListener('input', e => renderViewer(e.target.value));
+document.getElementById('viewerBack').addEventListener('click', () => { if (viewerEditing) exitEditMode(); overview(); });
+document.getElementById('viewerSearch').addEventListener('input', e => { if (!viewerEditing) renderViewer(e.target.value); });
+document.getElementById('editToggle').addEventListener('click', () => { viewerEditing ? exitEditMode() : enterEditMode(); });
+
+// theme toggle (auto → light → dark)
+(function () {
+  const btn = document.getElementById('themeToggle');
+  const apply = (t) => {
+    if (t === 'auto') document.documentElement.removeAttribute('data-theme');
+    else document.documentElement.setAttribute('data-theme', t);
+    localStorage.setItem('theme', t);
+    btn.textContent = t;
+  };
+  apply(localStorage.getItem('theme') || 'auto');
+  btn.addEventListener('click', () => {
+    const cur = localStorage.getItem('theme') || 'auto';
+    apply(cur === 'auto' ? 'light' : cur === 'light' ? 'dark' : 'auto');
+  });
+})();
 
 // stats
 document.getElementById('statsBtn').addEventListener('click', openStats);
@@ -2901,42 +3948,79 @@ document.getElementById('integrityDismiss').addEventListener('click', hideIntegr
 // on this day refresh (cycles a new random memory)
 document.getElementById('otdRefresh').addEventListener('click', renderOnThisDay);
 
-// secondary forms (past memory, incoming)
+// secondary forms (past memory, incoming) — in the new three-column overview,
+// past/undated forms are inline in the write panel. These helpers remain for
+// compatibility with the save functions that call closeSecondaryForms().
 function closeSecondaryForms() {
-  document.getElementById('pastForm').style.display = 'none';
-  document.getElementById('incomingForm').style.display = 'none';
-  document.querySelector('.secondary-btns').style.display = '';
+  const pf = document.getElementById('pastForm');
+  const inf = document.getElementById('incomingForm');
+  if (pf) pf.style.display = 'none';
+  if (inf) inf.style.display = 'none';
+  const sb = document.querySelector('.secondary-btns');
+  if (sb) sb.style.display = '';
 }
 
 // incoming memory
-document.getElementById('incomingShow').addEventListener('click', () => {
-  document.querySelector('.secondary-btns').style.display = 'none';
-  document.getElementById('incomingForm').style.display = 'block';
-  document.getElementById('incomingTxt').focus();
-});
-document.getElementById('incomingCancel').addEventListener('click', () => {
-  document.getElementById('incomingTxt').value = '';
-  closeSecondaryForms();
-});
-document.getElementById('incomingSave').addEventListener('click', incomingSaveFn);
-document.getElementById('incomingTxt').addEventListener('keydown', e => {
-  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) incomingSaveFn();
-});
+const incomingShowBtn = document.getElementById('incomingShow');
+if (incomingShowBtn) {
+  incomingShowBtn.addEventListener('click', () => {
+    const sb = document.querySelector('.secondary-btns');
+    if (sb) sb.style.display = 'none';
+    const inf = document.getElementById('incomingForm');
+    if (inf) inf.style.display = 'block';
+    const itxt = document.getElementById('incomingTxt');
+    if (itxt) itxt.focus();
+  });
+}
+const incomingCancelBtn = document.getElementById('incomingCancel');
+if (incomingCancelBtn) {
+  incomingCancelBtn.addEventListener('click', () => {
+    const itxt = document.getElementById('incomingTxt');
+    if (itxt) itxt.value = '';
+    closeSecondaryForms();
+  });
+}
+const incomingSaveBtn = document.getElementById('incomingSave');
+if (incomingSaveBtn) incomingSaveBtn.addEventListener('click', incomingSaveFn);
+const incomingTxtEl = document.getElementById('incomingTxt');
+if (incomingTxtEl) {
+  incomingTxtEl.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) incomingSaveFn();
+  });
+}
 
 // past memory
-document.getElementById('pastShow').addEventListener('click', () => {
-  document.querySelector('.secondary-btns').style.display = 'none';
-  document.getElementById('pastForm').style.display = 'block';
-  document.getElementById('pastYr').focus();
-});
-document.getElementById('pastCancel').addEventListener('click', () => {
-  resetPastForm();
-  closeSecondaryForms();
-});
-document.getElementById('pastSave').addEventListener('click', pastSave);
+const pastShowBtn = document.getElementById('pastShow');
+if (pastShowBtn) {
+  pastShowBtn.addEventListener('click', () => {
+    const sb = document.querySelector('.secondary-btns');
+    if (sb) sb.style.display = 'none';
+    const pf = document.getElementById('pastForm');
+    if (pf) pf.style.display = 'block';
+    const py = document.getElementById('pastYr');
+    if (py) py.focus();
+  });
+}
+const pastCancelBtn = document.getElementById('pastCancel');
+if (pastCancelBtn) {
+  pastCancelBtn.addEventListener('click', () => {
+    resetPastForm();
+    closeSecondaryForms();
+  });
+}
+const pastSaveBtn = document.getElementById('pastSave');
+if (pastSaveBtn) pastSaveBtn.addEventListener('click', pastSave);
 ['pastYr','pastMo','pastDy','pastTm','pastTxt'].forEach(id => {
-  document.getElementById(id).addEventListener('input', updatePreview);
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('input', updatePreview);
 });
+// Cmd+Enter in past textarea triggers save
+const pastTxtEl = document.getElementById('pastTxt');
+if (pastTxtEl) {
+  pastTxtEl.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) pastSave();
+  });
+}
 
 // ── init: try to restore from localStorage ──
 loadFromStorage();

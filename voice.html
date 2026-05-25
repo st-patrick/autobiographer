@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Autobiographer — voice prototype</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #faf9f5;
+    --surface: #fdfcf8;
+    --surface2: #f2efe4;
+    --border: #d8d3c4;
+    --border-strong: #b5ae9c;
+    --text: #1a1918;
+    --dim: #6f6a60;
+    --faint: #9a9587;
+    --accent: #1a1918;
+    --warn: #8a1a1a;
+    --rec: #c73030;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #18161a;
+      --surface: #1f1d20;
+      --surface2: #27252a;
+      --border: #3a3740;
+      --border-strong: #555159;
+      --text: #ece8dc;
+      --dim: #8a8579;
+      --faint: #5a554d;
+      --accent: #ece8dc;
+      --warn: #e8a5a5;
+      --rec: #e87070;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Hoefler Text', 'Libre Baskerville', Georgia, 'Times New Roman', Times, serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 16px;
+    line-height: 1.6;
+    min-height: 100vh;
+    padding: 3rem 1.5rem 4rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    -webkit-font-smoothing: antialiased;
+    font-variant-numeric: oldstyle-nums;
+  }
+  .wrap { max-width: 640px; width: 100%; }
+  h1 { font-size: 1.6rem; font-weight: 400; margin-bottom: 0.3rem; }
+  .sub { color: var(--dim); font-style: italic; font-size: 0.88rem; margin-bottom: 2rem; }
+  .status {
+    padding: 0.6rem 0.9rem;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    font-size: 0.85rem;
+    font-style: italic;
+    color: var(--dim);
+    margin-bottom: 1rem;
+  }
+  .status.loading { border-color: var(--border-strong); }
+  .status.ready { border-color: #2d5a2d; color: var(--text); }
+  .status.error { border-color: var(--warn); color: var(--warn); }
+
+  .question-card {
+    padding: 1.5rem 0;
+    margin: 1rem 0 1.5rem;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    text-align: center;
+  }
+  .q-label {
+    font-size: 0.7rem;
+    color: var(--dim);
+    font-style: italic;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.6rem;
+  }
+  .q-text {
+    font-size: 1.2rem;
+    color: var(--text);
+    font-style: italic;
+    line-height: 1.5;
+  }
+
+  .record-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    padding: 2rem 0;
+  }
+  .mic-btn {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: transparent;
+    border: 2px solid var(--text);
+    color: var(--text);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 1rem;
+    font-style: italic;
+    transition: all 0.2s;
+  }
+  .mic-btn:hover:not(:disabled) { background: var(--text); color: var(--bg); }
+  .mic-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .mic-btn.recording {
+    border-color: var(--rec);
+    color: var(--rec);
+    animation: pulse 1.2s ease-in-out infinite;
+  }
+  .mic-btn.recording:hover { background: var(--rec); color: var(--bg); }
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(199, 48, 48, 0.4); }
+    50% { box-shadow: 0 0 0 14px rgba(199, 48, 48, 0); }
+  }
+  .timer {
+    font-variant-numeric: tabular-nums;
+    font-size: 0.9rem;
+    color: var(--dim);
+    font-style: italic;
+  }
+
+  .transcript-wrap {
+    margin: 1.5rem 0;
+  }
+  .transcript-label {
+    font-size: 0.7rem;
+    color: var(--dim);
+    font-style: italic;
+    margin-bottom: 0.4rem;
+    letter-spacing: 0.05em;
+  }
+  textarea {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 1rem;
+    padding: 1rem;
+    resize: vertical;
+    min-height: 150px;
+    line-height: 1.6;
+  }
+  textarea:focus { outline: none; border-color: var(--text); }
+
+  .clarifiers {
+    margin: 1.2rem 0;
+    padding: 1rem 1.2rem;
+    border-left: 3px solid var(--border-strong);
+    background: var(--surface);
+  }
+  .clarifiers .label {
+    font-size: 0.7rem;
+    color: var(--dim);
+    font-style: italic;
+    margin-bottom: 0.6rem;
+    letter-spacing: 0.05em;
+  }
+  .clarifiers ul { list-style: none; padding: 0; }
+  .clarifiers li {
+    padding: 0.35rem 0;
+    font-size: 0.88rem;
+    color: var(--text);
+  }
+  .clarifiers li::before { content: '— '; color: var(--dim); }
+
+  .btns { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-top: 1rem; }
+  .btn {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--text);
+    padding: 0.55rem 1.2rem;
+    font-family: inherit;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn:hover:not(:disabled) { background: var(--text); color: var(--bg); }
+  .btn.sec { border-color: var(--border-strong); color: var(--dim); }
+  .btn.sec:hover { border-color: var(--text); color: var(--text); background: transparent; }
+  .btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  .session-list {
+    margin: 2rem 0;
+    padding: 1.5rem 0;
+    border-top: 1px solid var(--border);
+  }
+  .session-list h3 {
+    font-size: 0.85rem;
+    font-weight: 400;
+    font-style: italic;
+    color: var(--dim);
+    margin-bottom: 0.8rem;
+  }
+  .session-entry {
+    padding: 0.8rem 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+  .session-entry:last-child { border-bottom: none; }
+  .session-entry .when {
+    font-size: 0.7rem;
+    color: var(--dim);
+    font-style: italic;
+    margin-bottom: 0.3rem;
+  }
+  .hint { font-size: 0.72rem; color: var(--faint); font-style: italic; margin-top: 0.4rem; }
+  .version-tag {
+    position: fixed;
+    top: 0.9rem;
+    left: 1.1rem;
+    font-size: 0.62rem;
+    color: var(--faint);
+    font-style: italic;
+    opacity: 0.55;
+    z-index: 50;
+    font-variant-numeric: oldstyle-nums;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+<div class="version-tag">voice · v2026-04-08.4 · local stack</div>
+<div class="wrap">
+
+  <h1>voice prototype</h1>
+  <p class="sub">lie on the couch. hit space or just talk — silence auto-stops the mic.</p>
+
+  <div class="status loading" id="status">initializing…</div>
+
+  <div class="question-card">
+    <div class="q-label">discover</div>
+    <div class="q-text" id="question">Describe one specific day from a gap year. Who was there? What were you doing? What do you remember about the light, the sounds, the smells?</div>
+  </div>
+
+  <div class="record-area">
+    <button class="mic-btn" id="micBtn" disabled>loading…</button>
+    <div class="timer" id="timer">00:00</div>
+    <div class="hint">tap to start · tap again to stop</div>
+  </div>
+
+  <div class="transcript-wrap" id="transcriptWrap" style="display:none">
+    <div class="transcript-label">transcript — edit if needed</div>
+    <textarea id="transcript" placeholder="your words will appear here…"></textarea>
+    <div class="hint">fillers like "uh", "um" are auto-stripped. nothing else is changed.</div>
+
+    <div class="clarifiers" id="clarifiers" style="display:none">
+      <div class="label">keep going <span id="clarifierProgress"></span></div>
+      <div id="clarifierText" style="font-size:1.05rem;font-style:italic;color:var(--text);line-height:1.55;margin-top:0.3rem"></div>
+      <div class="hint" style="margin-top:0.5rem">the mic is always listening · save below when you're done</div>
+    </div>
+
+    <div class="btns">
+      <button class="btn" id="saveBtn">save this memory</button>
+      <button class="btn sec" id="discardBtn">discard & start over</button>
+      <button class="btn sec" id="ttsToggleBtn">voice: on</button>
+    </div>
+  </div>
+
+  <div class="session-list" id="sessionList" style="display:none">
+    <h3>this session</h3>
+    <div id="sessionEntries"></div>
+    <div class="btns">
+      <button class="btn sec" id="downloadBtn">download session as .txt</button>
+    </div>
+  </div>
+
+</div>
+
+<script type="module">
+
+// ── config ──
+const WHISPER_MODELS = [
+  "onnx-community/whisper-base",
+  "onnx-community/whisper-tiny",
+];
+const TTS_MODEL = "onnx-community/Kokoro-82M-v1.0-ONNX";
+const TTS_VOICE = "af_heart"; // natural female voice; Kokoro has many
+// Try Gemma 4 first (newer), fall back to Gemma 2 if the MLC build isn't available yet,
+// then fall back to Llama 3.2 1B as a last resort. The graceful fallback ladder handles any
+// failure — if all LLMs fail, the app uses the static pool.
+const LLM_CANDIDATES = [
+  "gemma-4-E2B-it-q4f16_1-MLC",
+  "gemma-2-2b-it-q4f16_1-MLC",
+  "Llama-3.2-1B-Instruct-q4f16_1-MLC",
+];
+
+// Fallback pool used ONLY if the LLM failed to load. The LLM is the primary path.
+const DEEPENING_POOL = [
+  "what else?",
+  "who else was there?",
+  "what could you see?",
+  "what could you hear?",
+  "what did it smell like?",
+  "what were you wearing?",
+  "what were you feeling right then?",
+  "what happened next?",
+  "tell me more about that",
+  "what's the smallest detail you remember?",
+  "what did the light look like?",
+  "and then?",
+];
+const recentPrompts = [];
+function pickFallbackPrompt() {
+  const avail = DEEPENING_POOL.filter(p => !recentPrompts.includes(p));
+  const pool = avail.length > 0 ? avail : DEEPENING_POOL;
+  const pick = pool[Math.floor(Math.random() * pool.length)];
+  recentPrompts.push(pick);
+  if (recentPrompts.length > 5) recentPrompts.shift();
+  return pick;
+}
+
+// LLM system prompt — keep it tight. The model's only job is ONE follow-up question.
+const LLM_SYSTEM_PROMPT = `You are interviewing someone about their own life story for their autobiography. They will speak a memory. Your only job is to respond with ONE short follow-up question (under 14 words) that helps them deepen the memory. Prefer sensory details (smells, sounds, light, temperature, texture), spatial details (where, how far, inside/outside), emotional specifics, or temporal context (before, during, after). Never say "thank you" or "I understand". Never add commentary. Never repeat what they said. Output ONLY the question, with no prefix and no quotes.`;
+
+// ── DOM ──
+const $ = id => document.getElementById(id);
+const statusEl = $('status');
+const micBtn = $('micBtn');
+const timerEl = $('timer');
+const transcriptWrap = $('transcriptWrap');
+const transcriptEl = $('transcript');
+const clarifiersEl = $('clarifiers');
+const clarifierTextEl = $('clarifierText');
+const clarifierProgressEl = $('clarifierProgress');
+const hintEl = document.querySelector('.record-area .hint');
+const saveBtn = $('saveBtn');
+const discardBtn = $('discardBtn');
+const ttsToggleBtn = $('ttsToggleBtn');
+const sessionListEl = $('sessionList');
+const sessionEntriesEl = $('sessionEntries');
+const downloadBtn = $('downloadBtn');
+
+// ── state ──
+let transcriber = null;      // whisper pipeline
+let ttsPipeline = null;      // kokoro pipeline (null → fallback to speechSynthesis)
+let llmEngine = null;        // webllm engine (null → fallback to DEEPENING_POOL)
+let mediaRecorder = null;
+let audioChunks = [];
+let isRecording = false;
+let recordStart = 0;
+let timerInterval = null;
+let sessionEntries = [];
+let active = {
+  transcript: '',
+  ttsEnabled: true,
+};
+
+// ── status helper ──
+function setStatus(text, kind) {
+  statusEl.textContent = text;
+  statusEl.className = 'status ' + (kind || '');
+}
+
+// ── load all three models (Whisper → Kokoro → Gemma) ──
+async function loadModel() {
+  let pipeline, env;
+  try {
+    setStatus('loading transformers.js…', 'loading');
+    const mod = await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.7.3');
+    pipeline = mod.pipeline;
+    env = mod.env;
+    env.allowLocalModels = false;
+    env.useBrowserCache = true;
+  } catch (e) {
+    console.error(e);
+    setStatus('could not load transformers.js: ' + e.message, 'error');
+    return;
+  }
+
+  const hasWebGPU = 'gpu' in navigator;
+  const device = hasWebGPU ? 'webgpu' : 'wasm';
+
+  // ── 1. Whisper (required) ──
+  let whisperOK = false;
+  for (const model of WHISPER_MODELS) {
+    try {
+      const label = model.split('/').pop();
+      setStatus(`[1/3] ${label} · ${device}`, 'loading');
+      transcriber = await pipeline('automatic-speech-recognition', model, {
+        device,
+        progress_callback: (p) => {
+          if (p.status === 'progress' && p.file) {
+            const pct = p.progress ? Math.round(p.progress) : 0;
+            setStatus(`[1/3] ${label} · ${p.file.split('/').pop()} · ${pct}%`, 'loading');
+          }
+        },
+      });
+      whisperOK = true;
+      break;
+    } catch (e) {
+      console.warn(`whisper ${model} failed:`, e.message);
+    }
+  }
+  if (!whisperOK) {
+    setStatus('whisper failed to load · see console', 'error');
+    micBtn.textContent = 'error';
+    return;
+  }
+
+  // ── 2. Kokoro TTS (optional — falls back to browser speechSynthesis) ──
+  try {
+    setStatus(`[2/3] kokoro-tts · ${device}`, 'loading');
+    ttsPipeline = await pipeline('text-to-speech', TTS_MODEL, {
+      dtype: 'fp32',
+      device,
+      progress_callback: (p) => {
+        if (p.status === 'progress' && p.file) {
+          const pct = p.progress ? Math.round(p.progress) : 0;
+          setStatus(`[2/3] kokoro · ${p.file.split('/').pop()} · ${pct}%`, 'loading');
+        }
+      },
+    });
+    console.log('kokoro loaded');
+  } catch (e) {
+    console.warn('kokoro failed, will use browser TTS fallback:', e.message);
+    ttsPipeline = null;
+  }
+
+  // ── 3. Gemma/LLM via WebLLM (optional — falls back to random pool) ──
+  try {
+    setStatus(`[3/3] loading webllm…`, 'loading');
+    const webllm = await import('https://esm.run/@mlc-ai/web-llm');
+    for (const modelId of LLM_CANDIDATES) {
+      try {
+        const short = modelId.split('-').slice(0, 3).join('-');
+        setStatus(`[3/3] ${short} · downloading (first time only)`, 'loading');
+        llmEngine = await webllm.CreateMLCEngine(modelId, {
+          initProgressCallback: (p) => {
+            const pct = p.progress ? Math.round(p.progress * 100) : 0;
+            const msg = (p.text || '').slice(0, 80);
+            setStatus(`[3/3] ${short} · ${pct}% · ${msg}`, 'loading');
+          },
+        });
+        console.log('LLM loaded:', modelId);
+        break;
+      } catch (e) {
+        console.warn(`LLM ${modelId} failed:`, e.message);
+      }
+    }
+  } catch (e) {
+    console.warn('WebLLM import failed, falling back:', e.message);
+    llmEngine = null;
+  }
+
+  const bits = [];
+  bits.push(whisperOK ? 'whisper✓' : 'whisper✗');
+  bits.push(ttsPipeline ? 'kokoro✓' : 'kokoro✗ (fallback)');
+  bits.push(llmEngine ? 'gemma✓' : 'gemma✗ (fallback)');
+  setStatus(`ready · ${bits.join(' · ')} · device: ${device}`, 'ready');
+  micBtn.textContent = '●';
+  micBtn.disabled = false;
+}
+
+// ── audio recording (with silence auto-stop) ──
+let silenceInterval = null;
+let audioCtxForSilence = null;
+
+async function startRecording() {
+  if (isRecording) return;
+  try {
+    // Cancel any ongoing TTS before listening
+    try { speechSynthesis.cancel(); } catch (e) {}
+
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        channelCount: 1,
+        sampleRate: 16000,
+        echoCancellation: true,
+        noiseSuppression: true,
+      }
+    });
+    audioChunks = [];
+    mediaRecorder = new MediaRecorder(stream);
+    mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
+    mediaRecorder.onstop = async () => {
+      stream.getTracks().forEach(t => t.stop());
+      if (silenceInterval) { clearInterval(silenceInterval); silenceInterval = null; }
+      if (audioCtxForSilence) { try { audioCtxForSilence.close(); } catch (e) {} audioCtxForSilence = null; }
+      await transcribeChunks();
+    };
+    mediaRecorder.start();
+    isRecording = true;
+    recordStart = Date.now();
+    micBtn.classList.add('recording');
+    micBtn.textContent = '■';
+    startTimer();
+    setStatus('listening… (auto-stops on silence)', 'ready');
+    hintEl.textContent = 'speak now · silence for 2s or tap space to stop';
+
+    // ── silence detection via Web Audio API ──
+    // Sample the mic's RMS amplitude every 100ms. If it's below threshold for
+    // ~2 seconds of continuous frames AND we've been recording for at least 1.5s, stop.
+    audioCtxForSilence = new (window.AudioContext || window.webkitAudioContext)();
+    const source = audioCtxForSilence.createMediaStreamSource(stream);
+    const analyser = audioCtxForSilence.createAnalyser();
+    analyser.fftSize = 2048;
+    source.connect(analyser);
+    const buf = new Float32Array(analyser.fftSize);
+
+    const SILENCE_THRESHOLD = 0.01;   // tweak if too sensitive/insensitive
+    const SILENCE_MS = 2000;
+    const FRAME_MS = 100;
+    const MIN_RECORD_MS = 1500;       // don't auto-stop in the first 1.5s
+    const FRAMES_NEEDED = SILENCE_MS / FRAME_MS;
+    let silentFrames = 0;
+    let everSpoke = false;            // require at least one frame above threshold before auto-stop
+
+    silenceInterval = setInterval(() => {
+      if (!isRecording) { clearInterval(silenceInterval); silenceInterval = null; return; }
+      analyser.getFloatTimeDomainData(buf);
+      let rms = 0;
+      for (let i = 0; i < buf.length; i++) rms += buf[i] * buf[i];
+      rms = Math.sqrt(rms / buf.length);
+      const elapsed = Date.now() - recordStart;
+
+      if (rms > SILENCE_THRESHOLD) {
+        everSpoke = true;
+        silentFrames = 0;
+      } else {
+        silentFrames++;
+        if (everSpoke && silentFrames >= FRAMES_NEEDED && elapsed > MIN_RECORD_MS) {
+          clearInterval(silenceInterval);
+          silenceInterval = null;
+          stopRecording();
+        }
+      }
+    }, FRAME_MS);
+  } catch (e) {
+    console.error(e);
+    setStatus('microphone access denied: ' + e.message, 'error');
+  }
+}
+
+function stopRecording() {
+  if (!mediaRecorder || !isRecording) return;
+  isRecording = false;
+  mediaRecorder.stop();
+  micBtn.classList.remove('recording');
+  micBtn.textContent = '●';
+  stopTimer();
+  setStatus('transcribing…', 'loading');
+}
+
+function startTimer() {
+  timerInterval = setInterval(() => {
+    const s = Math.floor((Date.now() - recordStart) / 1000);
+    const m = Math.floor(s / 60), ss = s % 60;
+    timerEl.textContent = `${String(m).padStart(2,'0')}:${String(ss).padStart(2,'0')}`;
+  }, 1000);
+}
+function stopTimer() {
+  clearInterval(timerInterval);
+}
+
+// ── transcription ──
+async function transcribeChunks() {
+  try {
+    if (audioChunks.length === 0) {
+      setStatus('nothing recorded', 'error');
+      return;
+    }
+    const blob = new Blob(audioChunks, { type: 'audio/webm' });
+    const arrayBuffer = await blob.arrayBuffer();
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+    const decoded = await audioCtx.decodeAudioData(arrayBuffer);
+    let audio;
+    if (decoded.numberOfChannels === 1) {
+      audio = decoded.getChannelData(0);
+    } else {
+      const l = decoded.getChannelData(0), r = decoded.getChannelData(1);
+      audio = new Float32Array(l.length);
+      for (let i = 0; i < l.length; i++) audio[i] = (l[i] + r[i]) / 2;
+    }
+
+    const output = await transcriber(audio, {
+      language: 'english',
+      task: 'transcribe',
+      chunk_length_s: 30,
+      stride_length_s: 5,
+    });
+
+    const cleaned = stripFillers(String(output.text || '').trim());
+    if (!cleaned) {
+      setStatus('no speech detected — try again', 'error');
+      return;
+    }
+
+    // Always append — no discrete "sessions". One long monologue that keeps growing.
+    active.transcript = active.transcript
+      ? active.transcript + '\n\n' + cleaned
+      : cleaned;
+
+    transcriptEl.value = active.transcript;
+    transcriptWrap.style.display = 'block';
+    // After every transcription, speak a new deepening prompt and auto-arm the mic.
+    // The loop only stops when the user clicks "save" or "discard".
+    promptAndListen();
+  } catch (e) {
+    console.error(e);
+    setStatus('transcription failed: ' + e.message, 'error');
+  }
+}
+
+// Always-on continuation: generate a context-aware follow-up via Gemma (or fall back
+// to the static pool), speak it via Kokoro (or speechSynthesis fallback), then auto-arm.
+async function promptAndListen() {
+  setStatus('thinking…', 'loading');
+  clarifierTextEl.textContent = '…';
+  clarifiersEl.style.display = 'block';
+  hintEl.textContent = 'thinking…';
+
+  let q;
+  try {
+    q = await generateFollowup(active.transcript);
+  } catch (e) {
+    console.warn('LLM follow-up failed, using pool:', e.message);
+    q = pickFallbackPrompt();
+  }
+
+  clarifierTextEl.textContent = q;
+  hintEl.textContent = 'keep talking · the mic re-arms automatically';
+  setStatus('listening for more…', 'ready');
+  await speakText(q);
+  setTimeout(() => {
+    if (!isRecording && !micBtn.disabled) startRecording();
+  }, 300);
+}
+
+// Generate a follow-up question from Gemma given the running transcript.
+// Falls through (throws) if the LLM isn't loaded so promptAndListen can fall back.
+async function generateFollowup(transcript) {
+  if (!llmEngine) throw new Error('no LLM');
+  // Only send the last ~1500 chars of transcript to keep the context tight.
+  const recent = transcript.slice(-1500);
+  const reply = await llmEngine.chat.completions.create({
+    messages: [
+      { role: 'system', content: LLM_SYSTEM_PROMPT },
+      { role: 'user', content: recent },
+    ],
+    temperature: 0.4,
+    max_tokens: 40,
+  });
+  let q = (reply.choices[0].message.content || '').trim();
+  // Strip any surrounding quotes or common prefixes the model might add
+  q = q.replace(/^["'""'']+|["'""'']+$/g, '');
+  q = q.replace(/^(question[:\-]|follow[- ]?up[:\-]|a[:\-]|q[:\-])\s*/i, '');
+  // Keep only the first line / sentence
+  q = q.split('\n')[0].trim();
+  if (q.length > 140) q = q.slice(0, 140);
+  return q || pickFallbackPrompt();
+}
+
+// Kick off the first recording: speak the on-screen question via TTS, then auto-arm the mic.
+function speakInitialQuestionAndListen() {
+  const q = document.getElementById('question').textContent.trim();
+  if (!q) return;
+  speakText(q, () => {
+    setTimeout(() => {
+      if (!isRecording && !micBtn.disabled) startRecording();
+    }, 400);
+  });
+}
+
+// Speak text. Prefers Kokoro TTS (natural voice), falls back to browser speechSynthesis
+// if Kokoro didn't load. Returns a Promise that resolves when playback ends.
+// If an `onDone` callback is passed, it's called at the end too (back-compat).
+async function speakText(text, onDone) {
+  const finish = () => { if (typeof onDone === 'function') onDone(); };
+  if (!active.ttsEnabled) { finish(); return; }
+
+  // Path 1: Kokoro (natural voice)
+  if (ttsPipeline) {
+    try {
+      const output = await ttsPipeline(text, { voice: TTS_VOICE });
+      // output: { audio: Float32Array, sampling_rate: number }
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const buffer = ctx.createBuffer(1, output.audio.length, output.sampling_rate);
+      buffer.copyToChannel(output.audio, 0);
+      const source = ctx.createBufferSource();
+      source.buffer = buffer;
+      source.connect(ctx.destination);
+      source.start();
+      await new Promise(res => { source.onended = res; });
+      try { ctx.close(); } catch (e) {}
+      finish();
+      return;
+    } catch (e) {
+      console.warn('Kokoro playback failed, falling back to speechSynthesis:', e.message);
+    }
+  }
+
+  // Path 2: browser speechSynthesis fallback
+  if ('speechSynthesis' in window) {
+    try {
+      speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.rate = 0.96;
+      u.pitch = 1.0;
+      u.volume = 0.85;
+      await new Promise(res => {
+        u.onend = res;
+        u.onerror = res;
+        speechSynthesis.speak(u);
+      });
+    } catch (e) { /* swallow */ }
+  }
+  finish();
+}
+
+// ── verbatim cleanup: strip only obvious fillers ──
+function stripFillers(text) {
+  // Only strip when clearly a filler (surrounded by spaces or punctuation).
+  // Conservative — leaves most words alone.
+  return text
+    .replace(/\b(uh+|um+|erm+|uhh+)\b[,.]?\s*/gi, '')
+    .replace(/\s{2,}/g, ' ')
+    .replace(/\s+([,.!?])/g, '$1')
+    .trim();
+}
+
+// ── heuristic clarifier (phase 2, pure JS, no LLM) ──
+// Looks for ambiguity signals and emits clarification prompts.
+// Priority: unnamed people, vague time references, pronouns without antecedent.
+function findClarifications(text) {
+  const out = [];
+  const lower = text.toLowerCase();
+
+  // 1) Unnamed people
+  if (/\b(a|this|that|some)\s+(friend|guy|girl|woman|man|person|kid|teacher|colleague)\b/i.test(text)) {
+    out.push('You mentioned a friend/person without a name — who specifically?');
+  }
+
+  // 2) Vague time
+  const vagueTime = [
+    /\ba while ago\b/i, /\bback then\b/i, /\bone time\b/i, /\bthat one year\b/i,
+    /\bthat summer\b/i, /\bthat winter\b/i, /\bwhen I was younger\b/i, /\bsome years ago\b/i,
+  ];
+  if (vagueTime.some(re => re.test(text))) {
+    out.push('You used a vague time reference — which year or season roughly?');
+  }
+
+  // 3) Place without name
+  if (/\b(a|this|that|some)\s+(place|city|town|bar|cafe|restaurant|club|park|beach)\b/i.test(text)) {
+    out.push('You mentioned a place without naming it — where was it?');
+  }
+
+  // 4) Pronoun without antecedent at the very beginning
+  if (/^(he|she|they|it)\s/i.test(text.trim())) {
+    out.push('The transcript starts with a pronoun — who or what were you referring to?');
+  }
+
+  // 5) Sensory richness — if entry is long but has zero sensory words, suggest adding one
+  const sensoryWords = /\b(smell|sound|heard|saw|tasted|felt|warm|cold|loud|quiet|bright|dark|soft|rough)\b/i;
+  if (text.length > 300 && !sensoryWords.test(text)) {
+    out.push('No sensory details yet — was there a smell, a sound, or a texture you remember?');
+  }
+
+  // 6) Very short entry — probably incomplete
+  if (text.length < 60 && text.length > 5) {
+    out.push('Pretty short — anything else from that moment?');
+  }
+
+  return out;
+}
+
+function escHtml(s) {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// ── save to session ──
+function saveEntry() {
+  const text = transcriptEl.value.trim();
+  if (!text) return;
+  const now = new Date();
+  const stamp = `${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}${pad(now.getHours())}${pad(now.getMinutes())}`;
+  sessionEntries.push({ stamp, text, ts: now });
+  renderSession();
+  resetActive();
+  setStatus('saved · record another or download below', 'ready');
+}
+
+function resetActive() {
+  active.transcript = '';
+  transcriptEl.value = '';
+  transcriptWrap.style.display = 'none';
+  clarifiersEl.style.display = 'none';
+  hintEl.textContent = 'tap to start · tap again to stop';
+  try { speechSynthesis.cancel(); } catch (e) {}
+}
+
+function pad(n) { return String(n).padStart(2, '0'); }
+
+function renderSession() {
+  if (sessionEntries.length === 0) { sessionListEl.style.display = 'none'; return; }
+  sessionListEl.style.display = 'block';
+  let html = '';
+  for (const e of sessionEntries) {
+    const when = e.ts.toLocaleString();
+    html += `<div class="session-entry"><div class="when">${escHtml(when)} · stamp ${escHtml(e.stamp)}</div>${escHtml(e.text)}</div>`;
+  }
+  sessionEntriesEl.innerHTML = html;
+}
+
+function downloadSession() {
+  if (sessionEntries.length === 0) return;
+  // Build a chunk that can be pasted into autobiography.txt
+  // Format: YYYYMMDDHHMM text (matches existing verbatim compact format)
+  const lines = sessionEntries.map(e => `${e.stamp} ${e.text}`).join('\n\n');
+  const blob = new Blob([lines + '\n'], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `voice-session-${Date.now()}.txt`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function discardEntry() {
+  resetActive();
+  setStatus('discarded · record again', 'ready');
+}
+
+function toggleTTS() {
+  active.ttsEnabled = !active.ttsEnabled;
+  ttsToggleBtn.textContent = 'voice: ' + (active.ttsEnabled ? 'on' : 'off');
+  if (!active.ttsEnabled) {
+    try { speechSynthesis.cancel(); } catch (e) {}
+  }
+}
+
+// ── wire up ──
+micBtn.addEventListener('click', () => {
+  if (isRecording) stopRecording();
+  else {
+    try { speechSynthesis.cancel(); } catch (e) {}
+    startRecording();
+  }
+});
+saveBtn.addEventListener('click', saveEntry);
+discardBtn.addEventListener('click', discardEntry);
+downloadBtn.addEventListener('click', downloadSession);
+ttsToggleBtn.addEventListener('click', toggleTTS);
+
+// Space bar = push-to-talk toggle. Ignored when focus is in the transcript textarea
+// (so users can still type/edit normally).
+document.addEventListener('keydown', e => {
+  if (e.code !== 'Space' || e.repeat) return;
+  const tag = document.activeElement && document.activeElement.tagName;
+  if (tag === 'TEXTAREA' || tag === 'INPUT') return;
+  if (micBtn.disabled) return;
+  e.preventDefault();
+  if (isRecording) stopRecording();
+  else startRecording();
+});
+
+// ── start ──
+// Load the model. Once ready, speak the on-screen question and auto-arm the mic
+// so the user can just start talking without tapping anything.
+(async () => {
+  await loadModel();
+  if (!micBtn.disabled) {
+    // small delay so the user sees the "ready" status before we start speaking
+    setTimeout(speakInitialQuestionAndListen, 600);
+  }
+})();
+
+</script>
+</body>
+</html>

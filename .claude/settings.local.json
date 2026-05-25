@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git init:*)",
+      "Bash(cp autobiography.txt autobiography.txt.bak && python3 normalize_dates.py autobiography.txt)",
+      "Bash(python3 coverage.py)",
+      "Bash(open /Users/patrick.reinbold/code/autobiographer/index.html)",
+      "Bash(node:*)",
+      "Bash(ls -la *.txt)",
+      "WebSearch",
+      "WebFetch(domain:storycorps.org)",
+      "WebFetch(domain:oralhistory.org)",
+      "WebFetch(domain:www.asbjornspeaks.com)",
+      "WebFetch(domain:www.writeyourownlife.com)",
+      "WebFetch(domain:pmc.ncbi.nlm.nih.gov)",
+      "WebFetch(domain:cpb-us-e1.wpmucdn.com)",
+      "WebFetch(domain:archive.storycorps.org)",
+      "WebFetch(domain:theconversationproject.org)",
+      "WebFetch(domain:swkempowerlab.com)",
+      "WebFetch(domain:www.sweetstudy.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:webllm.mlc.ai)",
+      "WebFetch(domain:www.npmjs.com)",
+      "Bash(python3 -m http.server 8765)",
+      "Bash(sleep 1 echo \"Server PID: $!\" curl -sI http://localhost:8765/voice.html)",
+      "Bash(curl -sI http://localhost:8765/voice.html)"
+    ]
+  }
+}

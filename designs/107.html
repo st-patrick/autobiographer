@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Autobiographer — Tabbed Center</title>
 <script type="application/json" id="design-meta">
-{"id":"104-expanded-quick","title":"Expanded Quick","subtitle":"Center pane has write/read/random tabs","category":"journal-app","tags":["three-column","tabbed","immersive-browse","interactive"],"style":"tabbed-center","palette":["#faf9f5","#1a1918","#a66900"],"theme":"light","parents":["025-endless-a"],"mergedFrom":["033-immersive-browse"],"created":"2026-04-12"}
+{"id":"107-dim-sidebar","title":"Dim + Sidebar Tools","subtitle":"Center pane has write/read/random tabs","category":"journal-app","tags":["three-column","tabbed","immersive-browse","interactive"],"style":"tabbed-center","palette":["#faf9f5","#1a1918","#a66900"],"theme":"light","parents":["025-endless-a"],"mergedFrom":["033-immersive-browse"],"created":"2026-04-12"}
 </script>
 <style>
   :root {
@@ -58,7 +58,7 @@
   .sb{position:absolute;bottom:.3rem;right:0;background:transparent;border:none;color:var(--faint);width:1.8rem;height:1.8rem;border-radius:50%;cursor:pointer;font-family:inherit;font-size:.8rem;display:flex;align-items:center;justify-content:center}
   .sb:hover{border-color:var(--text);color:var(--text)}
 
-  .qsec{margin-bottom:0;padding-top:.8rem;border-top:none}
+  .qsec{margin-bottom:0;padding-top:1.2rem;border-top:1px solid var(--border)}
   .iv{padding-top:.4rem;border-top:none;margin-bottom:.3rem}
   .iv-m{font-size:.5rem;color:var(--faint);font-style:italic;margin-bottom:0;text-transform:uppercase;letter-spacing:.1em}
   .iv-q{font-size:1.15rem;line-height:1.5;font-style:italic;margin-bottom:.6rem;max-width:500px;padding:.4rem 0}
@@ -112,12 +112,9 @@
   .tc{display:flex;flex-direction:column;gap:.25rem}
   .bt{background:transparent;color:var(--dim);border:1px solid var(--border);padding:.35rem .5rem;font-family:inherit;font-size:.68rem;cursor:pointer;text-align:left;transition:all .15s}
   .bt:hover{border-color:var(--text);color:var(--text)}
-  .brw-body{transition:opacity .4s}
-  .brw-body.faded{opacity:.35}
-  .brw-body.faded:hover{opacity:.6}
-  .entry-opts{display:flex;gap:.8rem;margin-top:.4rem;font-size:.55rem;color:var(--faint);font-style:italic}
-  .entry-opts a{color:var(--faint);cursor:pointer;text-decoration:none;border-bottom:1px dotted var(--border)}
-  .entry-opts a:hover{color:var(--text);border-color:var(--text)}
+  .brw-body.bg{color:var(--dim)}
+  .brw-body .yh{transition:color .3s}
+  .brw-body.bg .yh{color:var(--border-strong)}
 
   .imm-toggle{position:fixed;right:12px;top:50%;transform:translateY(-50%);z-index:100;background:var(--surface);border:1px solid var(--border);color:var(--dim);width:24px;height:48px;cursor:pointer;font-family:inherit;font-size:.7rem;display:flex;align-items:center;justify-content:center;transition:opacity .3s}
   .imm-toggle:hover{border-color:var(--text);color:var(--text)}
@@ -149,8 +146,6 @@
         <div class="iv-a"><span class="iv-m" id="ivMeta">2008 -- age 17 -- teen -- 4 answered</span><span style="display:flex;gap:.5rem"><a id="ivReroll">different question</a><span style="color:var(--faint)">&#183;</span><a id="ivSkip">skip year</a><span style="color:var(--faint)">&#183;</span><a id="ivSpec">+ month/day</a></span></div>
       </div>
       <div class="qsec"><div class="sl">right now</div><div class="tw"><textarea placeholder="what is happening..."></textarea><button class="sb" title="save" id="qSave">&#x21B5;</button></div></div>
-
-      <div class="entry-opts"><a id="pastMemLink">+ past memory</a><a id="undatedMemLink">+ undated memory</a></div>
     </div>
     <div class="tab-panel" id="panel-random">
       <div class="random-card">
@@ -170,7 +165,7 @@
   <div class="ss"><div class="st">on this day</div><div class="oq">feeling so alive... just kicked on some shrooms and then Jamiroquai nostalgia from scrubs inspired</div><div class="om">2026 -- earlier today</div></div>
   <div class="ss"><div class="st">people</div><div class="pl"><div class="pi" data-person="Alexandra"><span class="pn">Alexandra</span><span class="pc">12</span></div><div class="pi" data-person="Torsten"><span class="pn">Torsten</span><span class="pc">8</span></div><div class="pi" data-person="Vanessa"><span class="pn">Vanessa</span><span class="pc">6</span></div><div class="pi" data-person="Kev"><span class="pn">Kev</span><span class="pc">4</span></div><div class="pi" data-person="Chiara"><span class="pn">Chiara</span><span class="pc">3</span></div></div></div>
   <div class="ss"><div class="st">blind spots</div><div class="gi"><span class="gy">1991-1992</span><span class="gd">2 yrs</span></div><div class="gi"><span class="gy">2011</span><span class="gd">1 yr</span></div><div class="gi"><span class="gy">2015-2016</span><span class="gd">2 yrs</span></div><div class="gi"><span class="gy">2013</span><span class="gd">1 yr</span></div></div>
-  <div class="ss"><div class="st">tools</div><div class="tc"><button class="bt" id="tInc">Process incoming (8)</button><button class="bt" id="tPhotos">Photos</button><button class="bt" id="tStats">Stats</button><button class="bt" id="tDl">Download .txt</button></div></div>
+  <div class="ss"><div class="st">tools</div><div class="tc"><button class="bt" id="pastMemLink">+ past memory</button><button class="bt" id="undatedMemLink">+ undated memory</button><button class="bt" id="tInc">Process incoming (8)</button><button class="bt" id="tPhotos">Photos</button><button class="bt" id="tStats">Stats</button><button class="bt" id="tDl">Download .txt</button></div></div>
 </div>
 </div>
 
@@ -393,24 +388,15 @@ function updateImmersive(force){
 }
 immBtn.addEventListener('click',function(){immersive=!immersive;updateImmersive()});
 
-var brwBody=document.getElementById("brwBody");
-brwBody.classList.add("faded");
-var centerEl=document.querySelector(".center");
-centerEl.addEventListener("scroll",function(){
-  var brwTop=document.getElementById("brw").getBoundingClientRect().top;
-  var centerTop=centerEl.getBoundingClientRect().top;
-  if(brwTop-centerTop<200){brwBody.classList.remove("faded")}else{brwBody.classList.add("faded")}
+var bb=document.getElementById("brwBody");
+bb.classList.add("bg");
+document.querySelector(".center").addEventListener("scroll",function(){
+  var bt=document.getElementById("brw").getBoundingClientRect().top;
+  var ct=document.querySelector(".center").getBoundingClientRect().top;
+  if(bt-ct<180){bb.classList.remove("bg")}else{bb.classList.add("bg")}
 });
-document.getElementById("pastMemLink").addEventListener("click",function(e){
-  e.preventDefault();
-  var yr=prompt("Year?");
-  if(yr) alert("In the real app this would open the past memory form for "+yr);
-});
-document.getElementById("undatedMemLink").addEventListener("click",function(e){
-  e.preventDefault();
-  var mem=prompt("Undated memory?");
-  if(mem) alert("In the real app this would add to the INCOMING section");
-});
+document.getElementById("pastMemLink").addEventListener("click",function(){alert("Opens past memory form")});
+document.getElementById("undatedMemLink").addEventListener("click",function(){alert("Opens undated memory form")});
 render('all');
 showQ();
 showRandom();

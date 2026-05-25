@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Autobiographer — Tabbed Center</title>
 <script type="application/json" id="design-meta">
-{"id":"101-opts-as-tabs","title":"Opts As Tabs","subtitle":"Center pane has write/read/random tabs","category":"journal-app","tags":["three-column","tabbed","immersive-browse","interactive"],"style":"tabbed-center","palette":["#faf9f5","#1a1918","#a66900"],"theme":"light","parents":["025-endless-a"],"mergedFrom":["033-immersive-browse"],"created":"2026-04-12"}
+{"id":"111-write-subtabs","title":"Write Sub-tabs","subtitle":"Center pane has write/read/random tabs","category":"journal-app","tags":["three-column","tabbed","immersive-browse","interactive"],"style":"tabbed-center","palette":["#faf9f5","#1a1918","#a66900"],"theme":"light","parents":["025-endless-a"],"mergedFrom":["033-immersive-browse"],"created":"2026-04-12"}
 </script>
 <style>
   :root {
@@ -112,9 +112,15 @@
   .tc{display:flex;flex-direction:column;gap:.25rem}
   .bt{background:transparent;color:var(--dim);border:1px solid var(--border);padding:.35rem .5rem;font-family:inherit;font-size:.68rem;cursor:pointer;text-align:left;transition:all .15s}
   .bt:hover{border-color:var(--text);color:var(--text)}
-  .brw-body{transition:opacity .4s}
-  .brw-body.faded{opacity:.35}
-  .brw-body.faded:hover{opacity:.6}
+  .brw-body.bg{color:var(--dim)}
+  .brw-body .yh{transition:color .3s}
+  .brw-body.bg .yh{color:var(--border-strong)}
+  .write-sub{display:flex;gap:.5rem;margin-top:.8rem;margin-bottom:.4rem;font-size:.5rem;font-style:italic}
+  .write-sub a{color:var(--faint);cursor:pointer;padding:.2rem .4rem;border:1px solid transparent}
+  .write-sub a:hover{color:var(--dim)}
+  .write-sub a.active{color:var(--accent);border-color:var(--border)}
+  .sub-panel{display:none}
+  .sub-panel.active{display:block}
 
   .imm-toggle{position:fixed;right:12px;top:50%;transform:translateY(-50%);z-index:100;background:var(--surface);border:1px solid var(--border);color:var(--dim);width:24px;height:48px;cursor:pointer;font-family:inherit;font-size:.7rem;display:flex;align-items:center;justify-content:center;transition:opacity .3s}
   .imm-toggle:hover{border-color:var(--text);color:var(--text)}
@@ -136,7 +142,7 @@
   <div class="tabs-bar">
     <div class="tab active" data-tab="write">write</div>
     <div class="tab" data-tab="read">read</div>
-    <div class="tab" data-tab="random">random</div><div class="tab" data-tab="past" id="pastMemLink" style="color:var(--faint)">+ past</div><div class="tab" data-tab="undated" id="undatedMemLink" style="color:var(--faint)">+ undated</div>
+    <div class="tab" data-tab="random">random</div>
   </div>
   <div class="tabs-content">
     <div class="tab-panel active" id="panel-write">
@@ -145,7 +151,11 @@
         <div class="tw"><textarea id="ivAns" placeholder="..."></textarea><button class="sb" title="save & next" id="ivSave">&#x21B5;</button></div>
         <div class="iv-a"><span class="iv-m" id="ivMeta">2008 -- age 17 -- teen -- 4 answered</span><span style="display:flex;gap:.5rem"><a id="ivReroll">different question</a><span style="color:var(--faint)">&#183;</span><a id="ivSkip">skip year</a><span style="color:var(--faint)">&#183;</span><a id="ivSpec">+ month/day</a></span></div>
       </div>
-      <div class="qsec"><div class="sl">right now</div><div class="tw"><textarea placeholder="what is happening..."></textarea><button class="sb" title="save" id="qSave">&#x21B5;</button></div></div>
+      <div class="write-sub"><a class="active" data-ws="now">now</a><a data-ws="past">past memory</a><a data-ws="undated">undated</a></div>
+      <div class="qsec sub-panel active" data-wsp="now"><div class="sl">right now</div><div class="tw"><textarea placeholder="what is happening..."></textarea><button class="sb" title="save" id="qSave">&#x21B5;</button></div></div>
+    </div>
+      <div class="sub-panel" data-wsp="past" style="padding:.5rem 0"><div class="tw"><textarea placeholder="a past memory... what year?" style="min-height:32px"></textarea></div></div>
+      <div class="sub-panel" data-wsp="undated" style="padding:.5rem 0"><div class="tw"><textarea placeholder="a memory without a specific date..." style="min-height:32px"></textarea></div></div>
     </div>
     <div class="tab-panel" id="panel-random">
       <div class="random-card">
@@ -388,24 +398,20 @@ function updateImmersive(force){
 }
 immBtn.addEventListener('click',function(){immersive=!immersive;updateImmersive()});
 
-var brwBody=document.getElementById("brwBody");
-brwBody.classList.add("faded");
-var centerEl=document.querySelector(".center");
-centerEl.addEventListener("scroll",function(){
-  var brwTop=document.getElementById("brw").getBoundingClientRect().top;
-  var centerTop=centerEl.getBoundingClientRect().top;
-  if(brwTop-centerTop<200){brwBody.classList.remove("faded")}else{brwBody.classList.add("faded")}
+var bb=document.getElementById("brwBody");
+bb.classList.add("bg");
+document.querySelector(".center").addEventListener("scroll",function(){
+  var bt=document.getElementById("brw").getBoundingClientRect().top;
+  var ct=document.querySelector(".center").getBoundingClientRect().top;
+  if(bt-ct<180){bb.classList.remove("bg")}else{bb.classList.add("bg")}
 });
-document.getElementById("pastMemLink").addEventListener("click",function(e){
-  e.preventDefault();
-  var yr=prompt("Year?");
-  if(yr) alert("In the real app this would open the past memory form for "+yr);
-});
-document.getElementById("undatedMemLink").addEventListener("click",function(e){
-  e.preventDefault();
-  var mem=prompt("Undated memory?");
-  if(mem) alert("In the real app this would add to the INCOMING section");
-});
+document.querySelectorAll(".write-sub a").forEach(function(a){a.addEventListener("click",function(){
+  document.querySelectorAll(".write-sub a").forEach(function(l){l.classList.remove("active")});
+  a.classList.add("active");
+  document.querySelectorAll(".sub-panel").forEach(function(p){p.classList.remove("active")});
+  var t=document.querySelector("[data-wsp=\""+a.dataset.ws+"\"]");
+  if(t)t.classList.add("active");
+})});
 render('all');
 showQ();
 showRandom();

@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Autobiographer — UI Directions</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
+    background: #f8f6f1;
+    color: #1a1918;
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: "kern" 1, "liga" 1;
+    padding: 2.5rem 1.5rem 4rem;
+  }
+  .wrap { max-width: 1100px; margin: 0 auto; }
+
+  header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid #d8d3c4;
+  }
+  h1 {
+    font-size: 1.6rem;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+    margin-bottom: 0.2rem;
+  }
+  .sub {
+    color: #6f6a60;
+    font-size: 0.82rem;
+    font-style: italic;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(480px, 1fr));
+    gap: 2rem;
+  }
+
+  .card {
+    border: 1px solid #d8d3c4;
+    background: #fdfcf8;
+    overflow: hidden;
+  }
+
+  .preview {
+    position: relative;
+    aspect-ratio: 16 / 10;
+    overflow: hidden;
+    border-bottom: 1px solid #d8d3c4;
+    background: #faf9f5;
+  }
+  .preview iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 1440px;
+    height: 900px;
+    border: 0;
+    transform-origin: top left;
+    pointer-events: none;
+  }
+  .preview-cover {
+    position: absolute;
+    inset: 0;
+  }
+
+  .card-body {
+    padding: 1.2rem 1.4rem 1.4rem;
+  }
+  .card-id {
+    font-family: 'SF Mono', 'Menlo', monospace;
+    font-size: 0.62rem;
+    color: #9a9587;
+    letter-spacing: 0.04em;
+    margin-bottom: 0.15rem;
+  }
+  .card-title {
+    font-size: 1.15rem;
+    font-weight: 400;
+    margin-bottom: 0.15rem;
+  }
+  .card-subtitle {
+    font-size: 0.82rem;
+    color: #6f6a60;
+    font-style: italic;
+    margin-bottom: 0.8rem;
+    line-height: 1.4;
+  }
+  .tags {
+    display: flex;
+    gap: 0.3rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.8rem;
+  }
+  .tag {
+    font-size: 0.6rem;
+    font-style: italic;
+    color: #6f6a60;
+    border: 1px solid #d8d3c4;
+    padding: 0.15rem 0.5rem;
+    letter-spacing: 0.02em;
+  }
+  .palette {
+    display: flex;
+    gap: 4px;
+  }
+  .swatch {
+    width: 18px;
+    height: 18px;
+    border: 1px solid #d8d3c4;
+  }
+
+  a.card-link {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+  }
+  a.card-link:hover .card {
+    border-color: #1a1918;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>Autobiographer — UI Directions</h1>
+    <div class="sub">9 layout directions — favorites: 002, 004 — new forks: 006–009</div>
+  </header>
+
+  <div class="grid" id="gallery"></div>
+
+</div>
+
+<script>
+const designs = [
+  {
+    id: "001-journal",
+    title: "Journal",
+    subtitle: "Single scroll, tight editorial rhythm, no zones — everything compact and reachable",
+    tags: ["single-scroll", "compact", "editorial"],
+    palette: ["#faf9f5", "#1a1918", "#a66900"],
+    file: "001-journal.html"
+  },
+  {
+    id: "002-split-desk",
+    title: "Split Desk",
+    subtitle: "Two-column: writing on the left, stats & context sticky on the right",
+    tags: ["two-column", "wide", "sidebar"],
+    palette: ["#faf9f5", "#1a1918", "#a66900"],
+    file: "002-split-desk.html"
+  },
+  {
+    id: "003-deep-focus",
+    title: "Deep Focus",
+    subtitle: "100vh zones with massive textareas filling the space, library behind a drawer",
+    tags: ["minimal", "focus", "spacious"],
+    palette: ["#faf9f5", "#1a1918", "#a66900"],
+    file: "003-deep-focus.html"
+  },
+  {
+    id: "004-newspaper",
+    title: "Newspaper",
+    subtitle: "Dense editorial grid with double-rule masthead, 2-col sub-grid, sticky bottom toolbar",
+    tags: ["dense", "editorial", "grid", "information-dense"],
+    palette: ["#faf9f5", "#1a1918", "#a66900"],
+    file: "004-newspaper.html"
+  },
+  {
+    id: "005-card-stack",
+    title: "Card Stack",
+    subtitle: "Modular floating cards with rounded corners, generous inter-card gaps, pill buttons",
+    tags: ["cards", "modular", "rounded", "airy"],
+    palette: ["#f4f1eb", "#1a1918", "#a66900"],
+    file: "005-card-stack.html"
+  },
+  {
+    id: "006-wide-split",
+    title: "Wide Split",
+    subtitle: "Fork of 002 pushed to 1140px — more breathing room, wider sidebar with 2x2 stat grid",
+    tags: ["two-column", "wide", "spacious", "fork-002"],
+    palette: ["#faf9f5", "#1a1918", "#a66900"],
+    file: "006-wide-split.html"
+  },
+  {
+    id: "007-newsdesk",
+    title: "Newsdesk",
+    subtitle: "Merge of 002+004 — newspaper masthead, two-column split, sticky bottom toolbar",
+    tags: ["newspaper", "two-column", "masthead", "merge-002-004"],
+    palette: ["#faf9f5", "#1a1918", "#a66900"],
+    file: "007-newsdesk.html"
+  },
+  {
+    id: "008-full-bleed",
+    title: "Full Bleed",
+    subtitle: "Three-column at 1240px — vertical timeline gutter left, writing center, sidebar right",
+    tags: ["three-column", "full-width", "vertical-timeline"],
+    palette: ["#faf9f5", "#1a1918", "#a66900"],
+    file: "008-full-bleed.html"
+  },
+  {
+    id: "009-compact-desk",
+    title: "Compact Desk",
+    subtitle: "Tightest merge at 1000px — everything above the fold, 14px base, slim quick-entry bar",
+    tags: ["compact", "dense", "above-fold", "merge-002-004"],
+    palette: ["#faf9f5", "#1a1918", "#a66900"],
+    file: "009-compact-desk.html"
+  }
+];
+
+const gallery = document.getElementById('gallery');
+
+// Compute scale factor for iframe previews
+function getScale() {
+  const card = gallery.querySelector('.preview');
+  if (!card) return 0.34;
+  return card.offsetWidth / 1440;
+}
+
+designs.forEach(d => {
+  const html = `
+    <a class="card-link" href="${d.file}" target="_blank">
+      <div class="card">
+        <div class="preview">
+          <iframe src="${d.file}" loading="lazy" scrolling="no"></iframe>
+          <div class="preview-cover"></div>
+        </div>
+        <div class="card-body">
+          <div class="card-id">${d.id}</div>
+          <div class="card-title">${d.title}</div>
+          <div class="card-subtitle">${d.subtitle}</div>
+          <div class="tags">${d.tags.map(t => `<span class="tag">${t}</span>`).join('')}</div>
+          <div class="palette">${d.palette.map(c => `<div class="swatch" style="background:${c}"></div>`).join('')}</div>
+        </div>
+      </div>
+    </a>
+  `;
+  gallery.insertAdjacentHTML('beforeend', html);
+});
+
+// Scale iframes after layout
+function scaleIframes() {
+  document.querySelectorAll('.preview iframe').forEach(iframe => {
+    const container = iframe.closest('.preview');
+    const scale = container.offsetWidth / 1440;
+    iframe.style.transform = `scale(${scale})`;
+  });
+}
+window.addEventListener('load', scaleIframes);
+window.addEventListener('resize', scaleIframes);
+setTimeout(scaleIframes, 100);
+</script>
+</body>
+</html>

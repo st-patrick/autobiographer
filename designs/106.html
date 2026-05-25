@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Autobiographer — Tabbed Center</title>
 <script type="application/json" id="design-meta">
-{"id":"103-opts-floating","title":"Opts Floating","subtitle":"Center pane has write/read/random tabs","category":"journal-app","tags":["three-column","tabbed","immersive-browse","interactive"],"style":"tabbed-center","palette":["#faf9f5","#1a1918","#a66900"],"theme":"light","parents":["025-endless-a"],"mergedFrom":["033-immersive-browse"],"created":"2026-04-12"}
+{"id":"106-dim-modes","title":"Dim + Modes","subtitle":"Center pane has write/read/random tabs","category":"journal-app","tags":["three-column","tabbed","immersive-browse","interactive"],"style":"tabbed-center","palette":["#faf9f5","#1a1918","#a66900"],"theme":"light","parents":["025-endless-a"],"mergedFrom":["033-immersive-browse"],"created":"2026-04-12"}
 </script>
 <style>
   :root {
@@ -112,12 +112,13 @@
   .tc{display:flex;flex-direction:column;gap:.25rem}
   .bt{background:transparent;color:var(--dim);border:1px solid var(--border);padding:.35rem .5rem;font-family:inherit;font-size:.68rem;cursor:pointer;text-align:left;transition:all .15s}
   .bt:hover{border-color:var(--text);color:var(--text)}
-  .brw-body{transition:opacity .4s}
-  .brw-body.faded{opacity:.35}
-  .brw-body.faded:hover{opacity:.6}
-  .float-opts{position:sticky;bottom:0;background:var(--bg);border-top:1px solid var(--border);padding:.5rem 0;display:flex;gap:1rem;justify-content:center;font-size:.55rem;color:var(--faint);font-style:italic;z-index:5}
-  .float-opts a{color:var(--faint);cursor:pointer;text-decoration:none;border-bottom:1px dotted var(--border)}
-  .float-opts a:hover{color:var(--text)}
+  .brw-body.bg{color:var(--dim)}
+  .brw-body .yh{transition:color .3s}
+  .brw-body.bg .yh{color:var(--border-strong)}
+  .write-mode{display:flex;gap:.6rem;margin-bottom:.3rem;font-size:.52rem;font-style:italic}
+  .write-mode a{color:var(--faint);cursor:pointer;text-decoration:none;padding-bottom:1px;border-bottom:1px solid transparent}
+  .write-mode a:hover{color:var(--dim)}
+  .write-mode a.active{color:var(--accent);border-bottom-color:var(--accent)}
 
   .imm-toggle{position:fixed;right:12px;top:50%;transform:translateY(-50%);z-index:100;background:var(--surface);border:1px solid var(--border);color:var(--dim);width:24px;height:48px;cursor:pointer;font-family:inherit;font-size:.7rem;display:flex;align-items:center;justify-content:center;transition:opacity .3s}
   .imm-toggle:hover{border-color:var(--text);color:var(--text)}
@@ -148,7 +149,8 @@
         <div class="tw"><textarea id="ivAns" placeholder="..."></textarea><button class="sb" title="save & next" id="ivSave">&#x21B5;</button></div>
         <div class="iv-a"><span class="iv-m" id="ivMeta">2008 -- age 17 -- teen -- 4 answered</span><span style="display:flex;gap:.5rem"><a id="ivReroll">different question</a><span style="color:var(--faint)">&#183;</span><a id="ivSkip">skip year</a><span style="color:var(--faint)">&#183;</span><a id="ivSpec">+ month/day</a></span></div>
       </div>
-      <div class="qsec"><div class="sl">right now</div><div class="tw"><textarea placeholder="what is happening..."></textarea><button class="sb" title="save" id="qSave">&#x21B5;</button></div></div>
+      <div class="qsec">
+      <div class="write-mode"><a class="active" data-wm="now">now</a><a data-wm="past">past memory</a><a data-wm="undated">undated</a></div><div class="sl">right now</div><div class="tw"><textarea placeholder="what is happening..."></textarea><button class="sb" title="save" id="qSave">&#x21B5;</button></div></div>
     </div>
     <div class="tab-panel" id="panel-random">
       <div class="random-card">
@@ -161,8 +163,7 @@
       <div class="brw-bar"><input type="search" placeholder="search entries..." id="brwSearch"><span class="ftag" id="ftag">all</span></div>
       <div class="brw-body" id="brwBody"></div>
     </div>
-  <div class="float-opts"><a id="pastMemLink">+ past memory</a><a id="undatedMemLink">+ undated memory</a></div>
-</div>
+  </div>
 </div>
 
 <div class="side">
@@ -392,24 +393,24 @@ function updateImmersive(force){
 }
 immBtn.addEventListener('click',function(){immersive=!immersive;updateImmersive()});
 
-var brwBody=document.getElementById("brwBody");
-brwBody.classList.add("faded");
-var centerEl=document.querySelector(".center");
-centerEl.addEventListener("scroll",function(){
-  var brwTop=document.getElementById("brw").getBoundingClientRect().top;
-  var centerTop=centerEl.getBoundingClientRect().top;
-  if(brwTop-centerTop<200){brwBody.classList.remove("faded")}else{brwBody.classList.add("faded")}
+var bb=document.getElementById("brwBody");
+bb.classList.add("bg");
+document.querySelector(".center").addEventListener("scroll",function(){
+  var bt=document.getElementById("brw").getBoundingClientRect().top;
+  var ct=document.querySelector(".center").getBoundingClientRect().top;
+  if(bt-ct<180){bb.classList.remove("bg")}else{bb.classList.add("bg")}
 });
-document.getElementById("pastMemLink").addEventListener("click",function(e){
-  e.preventDefault();
-  var yr=prompt("Year?");
-  if(yr) alert("In the real app this would open the past memory form for "+yr);
-});
-document.getElementById("undatedMemLink").addEventListener("click",function(e){
-  e.preventDefault();
-  var mem=prompt("Undated memory?");
-  if(mem) alert("In the real app this would add to the INCOMING section");
-});
+var wmLinks=document.querySelectorAll(".write-mode a");
+var qTA=document.querySelector(".qsec textarea");
+wmLinks.forEach(function(a){a.addEventListener("click",function(){
+  wmLinks.forEach(function(l){l.classList.remove("active")});
+  a.classList.add("active");
+  var m=a.dataset.wm;
+  if(m==="now"){qTA.placeholder="what is happening..."}
+  else if(m==="past"){qTA.placeholder="a memory from the past... (add year/date after)"}
+  else{qTA.placeholder="a memory without a specific date..."}
+  qTA.focus();
+})});
 render('all');
 showQ();
 showRandom();
